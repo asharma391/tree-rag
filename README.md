@@ -216,13 +216,7 @@ docs/                      architecture and deployment guidance
 tests/                     offline unit, traversal, and artifact tests
 ```
 
-## Provenance and next steps
-
-This is a fork of [courtotlab/tree-rag](https://github.com/courtotlab/tree-rag),
-preserving its development history. Applicable updates from the earlier personal
-release have been reconciled onto that history. Historical repository contents
-have not been rewritten or certified for anonymous distribution; an anonymous
-review artifact requires separate inspection.
+## Next steps
 
 Current research gaps include human evaluation and inter-rater agreement,
 equal-budget comparisons, an evaluated embedding-disabled variant, and broader
