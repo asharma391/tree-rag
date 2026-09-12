@@ -32,3 +32,6 @@ benchmark_report*.json
 failure_logs/
 experiments/multihop_rag/input/
 experiments/multihop_rag/results/
+
+# Local experiment reruns and build caches
+work/

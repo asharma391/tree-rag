@@ -31,7 +31,8 @@ build = [
   "rank-bm25>=0.2.2",
   "tqdm>=4.67",
 ]
-test = ["pytest>=8.0"]
+eval = ["numpy>=2.0", "tqdm>=4.67"]
+test = ["pytest>=8.0", "numpy>=2.0", "tqdm>=4.67"]
 
 [dependency-groups]
 demo = [
@@ -44,10 +45,10 @@ demo = [
   "rank-bm25>=0.2.2",
   "tqdm>=4.67",
 ]
-test = ["pytest>=8.0"]
+test = ["pytest>=8.0", "numpy>=2.0", "tqdm>=4.67"]
 
 [tool.uv]
-default-groups = ["demo", "test"]
+default-groups = ["test"]
 
 [project.scripts]
 treerag = "treerag.cli:main"

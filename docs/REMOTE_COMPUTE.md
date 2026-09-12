@@ -7,8 +7,8 @@ avoids laptop-local forwarding and lets jobs survive sleep, lid closure, and dis
 
 ```bash
 ssh <user>@<compute-host>
-git clone https://github.com/asharma395/treerag.git
-cd treerag
+git clone https://github.com/asharma391/tree-rag.git
+cd tree-rag
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e '.[build,test]'
@@ -23,7 +23,7 @@ model endpoint inside the same approved trust boundary.
 
 ```bash
 tmux new -s treerag
-cd ~/treerag
+cd ~/tree-rag
 source .venv/bin/activate
 export TREERAG_OLLAMA_URL=http://127.0.0.1:11434
 export TREERAG_MODEL=gpt-oss:120b
@@ -37,7 +37,7 @@ The job remains on the compute host after SSH disconnects or the laptop sleeps.
 
 ```bash
 tmux new -s treerag-query
-cd ~/treerag
+cd ~/tree-rag
 source .venv/bin/activate
 export TREERAG_OLLAMA_URL=http://127.0.0.1:11434
 ./scripts/query_single_question.sh "Your question"
@@ -46,3 +46,16 @@ export TREERAG_OLLAMA_URL=http://127.0.0.1:11434
 For shared production service, replace `tmux` with the site's scheduler or a supervised
 service account. Never store passwords or tokens in shell scripts, `.env`, Git history,
 job logs, or command-line arguments.
+
+## Optional SSH tunnel
+
+When local code must use a remote endpoint, keep the forward bound to loopback:
+
+```bash
+ssh -NT -o ExitOnForwardFailure=yes \
+  -L 127.0.0.1:11528:127.0.0.1:11434 <user>@<compute-host>
+```
+
+In another terminal set `TREERAG_OLLAMA_URL=http://127.0.0.1:11528`.
+Both machines must be approved for the corpus being processed. The endpoint and
+account are deployment-specific; no institutional host is hardcoded.

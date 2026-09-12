@@ -37,15 +37,15 @@ import ollama
 import numpy as np
 import pandas as pd
 
-OLLAMA_URL  = os.environ.get("TREERAG_OLLAMA_URL", "http://127.0.0.1:11434")
-AGENT_MODEL = os.environ.get("TREERAG_MODEL", "gpt-oss:120b")
-JUDGE_MODEL = os.environ.get("TREERAG_JUDGE_MODEL", AGENT_MODEL)
-EMBED_MODEL = os.environ.get("TREERAG_EMBED_MODEL", "nomic-embed-text")
-CACHE_DIR   = Path(os.environ.get("TREERAG_CACHE_DIR", "tree_cache")); TREE_FILE = CACHE_DIR / "corpus_tree.json"
-QUESTIONS_FILE = os.environ.get("TREERAG_QUESTIONS_FILE", "questions_public.json")
-QMS_ANSWERS_FILE = os.environ.get("TREERAG_BASELINE_ANSWERS", "qms_answers_public.json")
-REPORT_FILE = __import__("os").environ.get("IMPROVE_REPORT_PATH") or "results/treerag_report.json"
-DOSSIER_FILE = os.environ.get("TREERAG_DOSSIER_PATH", "results/treerag_failure_dossiers.json")
+OLLAMA_URL  = "http://localhost:11528"
+AGENT_MODEL = "gpt-oss:120b"
+JUDGE_MODEL = "gpt-oss:120b"
+EMBED_MODEL = "nomic-embed-text"
+CACHE_DIR   = Path("tree_cache"); TREE_FILE = CACHE_DIR / "corpus_tree.json"
+QUESTIONS_FILE = "questions_public.json"
+QMS_ANSWERS_FILE = "qms_answers_public.json"  # public flat-hybrid answers
+REPORT_FILE = __import__("os").environ.get("IMPROVE_REPORT_PATH") or "results/treequest_report.json"
+DOSSIER_FILE = "results/treequest_failure_dossiers.json"
                                                # outperforms treerag: traversal event sequence with scores,
                                                # warnings, timings, lengths — no LLM diagnosis (the in-loop
                                                # diagnoser confabulated mechanisms), no document names, no
@@ -3608,8 +3608,10 @@ def _cite_paths(answer, names):
     return _pat.sub(_repl, answer)
 
 def _load_report():
-    from benchmark_protocol import load_checkpoint
-    return load_checkpoint(Path(REPORT_FILE), AGENT_MODEL, QUESTIONS_FILE)
+    if Path(REPORT_FILE).exists():
+        try: return json.loads(Path(REPORT_FILE).read_text(encoding="utf-8"))
+        except Exception: pass
+    return {"model": AGENT_MODEL, "questions_file": QUESTIONS_FILE, "results": []}
 
 def _save_report(report):
     tmp = Path(REPORT_FILE + ".tmp")
@@ -3864,18 +3866,70 @@ report = _load_report()
 by_qid = {r.get("qid"): r for r in report["results"]}
 qmap = {q.qid: q for q in QUESTIONS}
 
-# This runnable copy preserves the archived retrieval/answer controller but fixes
-# its score-selective development queue. Completed results are never rerun based
-# on quality; each new protocol writes its own versioned checkpoint.
-from benchmark_protocol import pending_question_ids
+def _lost_to_qms(r):
+    ta, qa = r.get("treerag_accuracy"), r.get("qms_accuracy")
+    return isinstance(ta, (int, float)) and isinstance(qa, (int, float)) and qa > ta
+
+# processing order: FIRST re-run every already-recorded qms-loss, but ORDERED so the most
+# diagnostic cases come first — the ones where treerag actually reached the SAME correct file as
+# qms yet produced a worse answer (`same_file` True) go before the ones where it landed on the
+# WRONG file (`same_file` False / unknown). Same-file losses isolate answer-assembly / granularity
+# regressions independent of navigation, so re-testing them first tells you fastest whether a fix
+# helped; wrong-file losses (a navigation/ranking miss) come after. Report order is preserved
+# within each group. THEN the questions not yet recorded, in their normal order. Recorded wins/ties
+# are kept untouched. A re-run REPLACES that question's entry in the report.
+# QUEUE ORDER: same-file qms-losses  ->  priority (GEN-2)  ->  wrong-file qms-losses  ->  PENDING,
+# where PENDING is one merged pool of the never-answered questions AND the modified ones (referential
+# answers just resolved), taken together in questions.json order. A modified question is treated
+# exactly like an unrecorded one — same pool, no separate pass.
+PRIORITY_RERUN_QIDS = ["GEN-99"]   # always re-run these in their slot, IN THIS ORDER, whether or not
+                                  # they are recorded as a qms loss
+
+# resolve priority qids case-insensitively so "qms-33" also matches a "QMS-33" in questions.json
+_qmap_ci = {str(k).lower(): k for k in qmap}
+_prio, _missing_prio = [], []
+for _qid in PRIORITY_RERUN_QIDS:
+    _hit = _qid if _qid in qmap else _qmap_ci.get(str(_qid).lower())
+    if _hit and _hit not in _prio: _prio.append(_hit)
+    elif not _hit: _missing_prio.append(_qid)
+_pset = set(_prio)
+
+# a MODIFIED question counts as unanswered until it has been graded ONCE since modification. Each
+# result stores "graded_as_modified"; a modified question whose recorded entry lacks that stamp (or
+# has no entry, e.g. the resolver purged it) is pending.
+def _graded_as_modified(qid): return bool(by_qid.get(qid, {}).get("graded_as_modified"))
+def _is_pending(q):
+    if q.qid in _pset: return False
+    if q.qid not in by_qid: return True                                   # never answered
+    return bool(getattr(q, "modified", False)) and not _graded_as_modified(q.qid)   # modified, not yet regraded
+
+pending_qids = [q.qid for q in QUESTIONS if _is_pending(q)]   # unanswered + modified, one pool
+_pendset = set(pending_qids)
+_n_mod_pending = sum(1 for q in QUESTIONS if _is_pending(q) and getattr(q, "modified", False))
+
+# recorded qms-losses, excluding anything already claimed by the priority or pending pools
+_losses = [r for r in report["results"] if _lost_to_qms(r) and r.get("qid") in qmap
+           and r["qid"] not in _pset and r["qid"] not in _pendset]
+rerun_same = [r["qid"] for r in _losses if r.get("same_file")]        # right file, worse answer
+rerun_diff = [r["qid"] for r in _losses if not r.get("same_file")]    # wrong file (or unknown)
+
+rerun_qids = rerun_same + rerun_diff
+queue = [qmap[qid] for qid in rerun_qids + pending_qids]
+# __IMPROVE_INSTRUMENT__
 import os as _impos
-for _debug_key in ("IMPROVE_ONLY_QIDS", "IMPROVE_STOP_AT_FIRST_LOSS"):
-    if _impos.environ.get(_debug_key):
-        raise ValueError(f"{_debug_key} is not permitted in the frozen-sample rerun")
-pending_qids = pending_question_ids([q.qid for q in QUESTIONS], report["results"])
-queue = [qmap[qid] for qid in pending_qids]
-print(f"resuming: {len(by_qid)} recorded in {REPORT_FILE}; preserving all recorded "
-      f"outcomes, running {len(pending_qids)} unrecorded questions in sample order\n")
+_only = _impos.environ.get('IMPROVE_ONLY_QIDS','').strip()
+if _only:
+    _oq = [x.strip() for x in _only.split(',') if x.strip()]
+    _qm_all = {q.qid: q for q in QUESTIONS}
+    queue = [_qm_all[x] for x in _oq if x in _qm_all]
+    print(f'[improve] queue overridden to {len(queue)} qid(s)')
+_kept = len(by_qid) - len({qid for qid in rerun_qids + pending_qids if qid in by_qid})
+if _missing_prio: print(f"warning: priority qid(s) not in {QUESTIONS_FILE}, skipped: {_missing_prio}")
+print(f"resuming: {len(by_qid)} recorded in {REPORT_FILE} — keeping {_kept} win/tie entr(ies), RE-RUNNING "
+      f"{len(rerun_qids)}: {len(rerun_same)} same-file/worse-answer, then priority {_prio}, then "
+      f"{len(rerun_diff)} wrong-file — then {len(pending_qids)} pending "
+      f"({_n_mod_pending} modified + {len(pending_qids)-_n_mod_pending} unanswered, interleaved in "
+      f"question order)\n")
 
 # ---- live per-question progress ticker (heuristic ETA) --------------------------------------
 # run_agent(live=False) is a long SILENT window (no prints until it returns), so a background
@@ -3925,7 +3979,13 @@ try:
         t0 = time.perf_counter(); counter = Counters(); tree_errored = False; tree_err = None
         sys.stdout = _ConsoleTee(_REAL_STDOUT)   # capture this question's exact console output
         print("="*94)
-        print(f"[{i}/{len(queue)}] {Q.qid}: {clip(Q.stem,110)}")
+        print(f"[{i}/{len(queue)}] {Q.qid}: {clip(Q.stem,110)}"
+              + ("   [PRIORITY RE-RUN]" if Q.qid in _pset else
+                 "   [MODIFIED: referential answer resolved -> reprocessing]"
+                     if (Q.qid in _pendset and getattr(Q, "modified", False)) else
+                 "" if Q.qid in _pendset else
+                 (("   [RE-RUN: same file as qms, worse answer]" if by_qid[Q.qid].get("same_file")
+                   else "   [RE-RUN: qms found a different file]") if Q.qid in by_qid else "")))
         # (1) correct answer as TEXT, not letters
         print(f"      correct answer: {' | '.join(gold_texts(Q)) or '(none)'}")
 
@@ -4032,6 +4092,7 @@ try:
             except Exception as e:
                 print(f"      dossier error: {e}")
 
+        report["results"] = [r for r in report["results"] if r.get("qid") != Q.qid]
         report["results"].append({
             "qid": Q.qid, "question": Q.stem,
             "correct_option_texts": gold_texts(Q),
@@ -4048,8 +4109,10 @@ try:
             "treerag_cited_docs": re.findall(r"\[([^\]\[]+)\]", response or ""),
         })
         _save_report(report)
-        try: open("improve/run_logs/heartbeat.log","a").write(f"{time.strftime('%H:%M:%S')} {Q.qid} tree={tree_acc:.3f} qms={qms_acc if isinstance(qms_acc, float) else chr(45)} {dt:.0f}s\n")
+        try: open("improve/run_logs/heartbeat.log","a").write(f"{time.strftime('%H:%M:%S')} {Q.qid} tree={tree_acc:.3f} qms={qms_acc if isinstance(qms_acc, float) else "-"} {dt:.0f}s\n")
         except Exception: pass
+        if _impos.environ.get('IMPROVE_STOP_AT_FIRST_LOSS')=='1' and isinstance(qms_acc,float) and isinstance(tree_acc,float) and qms_acc>tree_acc:
+            sys.stdout=_REAL_STDOUT; print(f'[improve] first loss at {Q.qid}; stopping early'); break
         qms_str = f"{qms_acc:.3f}" if isinstance(qms_acc, float) else "  -  "
         print(f"      => tree {tree_acc:.3f} | qms {qms_str} | {dt:.1f}s  (saved, {len(report['results'])} total)\n")
         sys.stdout = _REAL_STDOUT

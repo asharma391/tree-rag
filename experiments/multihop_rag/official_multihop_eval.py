@@ -33,12 +33,10 @@ RESULTS = HERE / "results"
 VENDOR = HERE / "vendor" / "multihop_rag"
 DEFAULT_SAMPLE = HERE / "input" / "sample_200.json"
 DEFAULT_REPORT = RESULTS / "treerag_public_frozen_v0_200_20260811.json"
-DEFAULT_PUBLIC_TREE = HERE / "tree_cache" / "corpus_tree.json"
+DEFAULT_PUBLIC_TREE = HERE.parent.parent / "data" / "multihop_rag_demo" / "corpus_tree.json"
 DEFAULT_COLLAPSED = RESULTS / "collapsed_answers.json"
 DEFAULT_ORACLE = RESULTS / "oracle_answers.json"
-DEFAULT_COLLAPSED_NODES = RESULTS / "collapsed_nodes.jsonl"
-DEFAULT_OUTPUT = RESULTS / "treerag_official_multihop_eval_v2_20260813.json"
-SCHEMA = "treerag.multihop-rag-official-eval.v2"
+SCHEMA = "treerag.multihop-rag-official-eval.v3"
 UPSTREAM_COMMIT = "cde8e844af14b3012f20158abc2854fe8458212a"
 SEED = 20260813
 
@@ -50,8 +48,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--public-tree", type=Path, default=DEFAULT_PUBLIC_TREE)
     parser.add_argument("--collapsed-answers", type=Path, default=DEFAULT_COLLAPSED)
     parser.add_argument("--oracle-answers", type=Path, default=DEFAULT_ORACLE)
-    parser.add_argument("--collapsed-nodes", type=Path, default=DEFAULT_COLLAPSED_NODES)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--collapsed-nodes", type=Path,
+                        help="Optional stored index; otherwise reconstruct text rows from the public tree")
+    parser.add_argument("--output", type=Path, required=True,
+                        help="New output path; existing results are never replaced")
     parser.add_argument("--bootstrap-samples", type=int, default=100_000)
     parser.add_argument("--randomization-samples", type=int, default=200_000)
     return parser.parse_args()
@@ -84,6 +84,25 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
         for line in path.read_text(encoding="utf-8").splitlines()
         if line
     ]
+
+
+def verify_official_sources() -> None:
+    """Reject unpinned evaluator bytes before importing executable source."""
+    manifest = read_json(VENDOR / "UPSTREAM.json")
+    if manifest.get("commit") != UPSTREAM_COMMIT:
+        raise ValueError("official evaluator manifest commit does not match the pinned revision")
+    for name in ("retrieval_evaluate.py", "qa_evaluate.py"):
+        expected = manifest["files"][name]["sha256"]
+        if sha256(VENDOR / name) != expected:
+            raise ValueError(f"official evaluator hash mismatch: {name}")
+
+
+def collapsed_nodes_from_tree(tree: dict[str, Any]) -> tuple[list[dict[str, Any]], str]:
+    """Recreate the saved text index without making embedding or model calls."""
+    builder = load_module("collapsed_text_index", HERE / "prepare_collapsed_index.py")
+    rows = builder.walk(tree)
+    serialized = "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows)
+    return rows, hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
 def normalize_identity(value: str) -> str:
@@ -318,14 +337,23 @@ def score_qa(
 def matched_judge_analysis(
     rows: list[dict[str, Any]], bootstrap_samples: int, randomization_samples: int
 ) -> dict[str, Any]:
+    if bootstrap_samples <= 0 or randomization_samples <= 0:
+        raise ValueError("resampling counts must be positive")
+    if not rows:
+        raise ValueError("matched judge analysis requires at least one paired result")
     tree = []
     baseline = []
     for row in rows:
         left = row.get("treerag_accuracy")
         right = row.get("qms_accuracy")
-        if isinstance(left, (int, float)) and isinstance(right, (int, float)):
-            tree.append(float(left))
-            baseline.append(float(right))
+        if not all(
+            isinstance(value, (int, float)) and not isinstance(value, bool)
+            and np.isfinite(value) and 0 <= value <= 1
+            for value in (left, right)
+        ):
+            raise ValueError(f"missing or invalid paired judge score for qid={row.get('qid')}")
+        tree.append(float(left))
+        baseline.append(float(right))
     difference = np.asarray(tree) - np.asarray(baseline)
     rng = np.random.default_rng(SEED)
 
@@ -349,7 +377,7 @@ def matched_judge_analysis(
     p_value = (exceedances + 1) / (randomization_samples + 1)
 
     return {
-        "metric": "shared_gpt_oss_120b_joint_judge_score_0_0.5_1",
+        "metric": "shared_gpt_oss_120b_joint_judge_score_continuous_0_1",
         "n": len(difference),
         "treerag_mean": mean(tree),
         "flat_hybrid_mean": mean(baseline),
@@ -371,9 +399,10 @@ def main() -> None:
     args.output = args.output.resolve()
     if args.output.exists():
         raise FileExistsError(f"refusing to replace existing result: {args.output}")
-    if args.public_tree.resolve() != DEFAULT_PUBLIC_TREE.resolve():
-        raise ValueError("only the fixed public MultiHop-RAG tree is permitted")
+    if args.bootstrap_samples <= 0 or args.randomization_samples <= 0:
+        raise ValueError("resampling counts must be positive")
 
+    verify_official_sources()
     retrieval_path = VENDOR / "retrieval_evaluate.py"
     qa_path = VENDOR / "qa_evaluate.py"
     retrieval_module = load_module("official_multihop_retrieval", retrieval_path)
@@ -386,18 +415,30 @@ def main() -> None:
     oracle_rows = read_json(args.oracle_answers)
     collapsed_by_qid = {str(row["qid"]): row for row in collapsed_rows}
     oracle_by_qid = {str(row["qid"]): row for row in oracle_rows}
-    if len(questions) != 200 or len(rows) != 200 or len(report_by_qid) != 200:
+    sample_qids = {str(question["qid"]) for question in questions}
+    if len(questions) != 200 or len(sample_qids) != 200 or len(rows) != 200 or len(report_by_qid) != 200:
         raise ValueError("the frozen evaluation requires exactly 200 unique questions/results")
-    if len(collapsed_by_qid) != 200 or len(oracle_by_qid) != 200:
+    if len(collapsed_rows) != 200 or len(oracle_rows) != 200 or len(collapsed_by_qid) != 200 or len(oracle_by_qid) != 200:
         raise ValueError("both completed controls must contain 200 unique results")
+    for name, indexed in (("TreeRAG", report_by_qid), ("collapsed", collapsed_by_qid),
+                          ("oracle", oracle_by_qid)):
+        if set(indexed) != sample_qids:
+            raise ValueError(f"{name} question IDs do not match the frozen sample")
 
     public_tree = read_json(args.public_tree)
+    if args.collapsed_nodes is None:
+        collapsed_nodes, collapsed_nodes_sha256 = collapsed_nodes_from_tree(public_tree)
+        collapsed_nodes_source = "deterministic text-only reconstruction from public tree"
+    else:
+        collapsed_nodes = read_jsonl(args.collapsed_nodes)
+        collapsed_nodes_sha256 = sha256(args.collapsed_nodes)
+        collapsed_nodes_source = "provided stored index"
     retrieved, gold, coverage, by_type = official_retrieval_inputs(
         questions, report_by_qid, index_public_tree(public_tree)
     )
     collapsed_retrieved, collapsed_gold, collapsed_coverage, collapsed_by_type = (
         stored_control_retrieval_inputs(
-            questions, collapsed_by_qid, read_jsonl(args.collapsed_nodes)
+            questions, collapsed_by_qid, collapsed_nodes
         )
     )
     oracle_retrieved, oracle_gold, oracle_coverage, oracle_by_type = (
@@ -432,7 +473,8 @@ def main() -> None:
             "public_tree_sha256": sha256(args.public_tree),
             "collapsed_answers_sha256": sha256(args.collapsed_answers),
             "oracle_answers_sha256": sha256(args.oracle_answers),
-            "collapsed_nodes_sha256": sha256(args.collapsed_nodes),
+            "collapsed_nodes_sha256": collapsed_nodes_sha256,
+            "collapsed_nodes_source": collapsed_nodes_source,
         },
         "retrieval_adapter": {
             "ordered_unit": "first-visit read_file trace event mapped to public chunk text",

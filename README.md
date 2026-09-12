@@ -1,286 +1,218 @@
-# TreeRAG: agentic hierarchical retrieval for genomics quality-management documents
+# TreeRAG: LLM-guided retrieval over corpus hierarchies
 
 <div align="center">
 
-[![CI](https://github.com/asharma395/treerag/actions/workflows/ci.yml/badge.svg)](https://github.com/asharma395/treerag/actions/workflows/ci.yml)
+[![CI](https://github.com/asharma391/tree-rag/actions/workflows/ci.yml/badge.svg)](https://github.com/asharma391/tree-rag/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-GPL--3.0--or--later-2F6B3B)](LICENSE)
 
 </div>
 
-**Recursive summarization and agentic tree traversal over large, structured corpora.**
+**Navigate a document collection, retain evidence across documents, and revisit
+unexplored branches when the evidence is incomplete.**
 
-TreeRAG lets an open-weight language model navigate a corpus-level hierarchy,
-retain relevant evidence, recover from an early wrong turn, and answer with source
-references. It is designed for document collections where structure, privacy,
-and auditability matter.
+TreeRAG studies retrieval over native folder, document, section, and passage
+hierarchies. An open-weight LLM scores branches and reads evidence; a bounded
+controller manages memory, local reading, and a corpus-wide search frontier.
 
 ![TreeRAG architecture](assets/treerag-system.svg)
 
-- [Overview](#overview)
-- [Getting started](#getting-started)
-- [How TreeRAG retrieves evidence](#how-treerag-retrieves-evidence)
-- [Reproducing the public evaluation](#reproducing-the-public-evaluation)
-- [Advanced settings](#advanced-settings)
-- [Evaluated implementation and vector boundary](#evaluated-implementation-and-vector-boundary)
-- [Repository layout](#repository-layout)
-- [Data, privacy, and licensing](#data-privacy-and-licensing)
-- [Next steps](#next-steps)
-- [Acknowledgements](#acknowledgements)
-- [Citation](#citation)
-
----
+[Overview](#overview) · [Results](#public-results) · [Getting started](#getting-started) ·
+[Reproduction](#reproducing-the-public-study) · [Custom corpora](#custom-corpora) ·
+[Configuration](#configuration) · [Layout](#repository-layout) · [Citation](#citation)
 
 ## Overview
 
-Clinical laboratories keep many controlled documents in nested folder
-hierarchies, and staff need effective methods to find specific information
-inside them. More generally, governed organizations face the same challenge
-across large collections of policies, procedures, reports, and records.
+Large informational collections contain answers distributed across sections,
+tables, and documents. TreeRAG builds recursive summaries while retaining the
+collection's existing structure, then searches that hierarchy at query time.
 
-Single-shot ranking does not explicitly consider document structure, so queries
-whose answers are found in tables, span sections, or require multiple documents
-can perform poorly. TreeRAG recursively summarizes the corpus into a
-hierarchical tree. From there, an open-weight LLM agent traverses the tree to
-find and retain the most relevant passages for a question.
+1. **Rank and descend.** Score visible branches using their summaries and previews.
+2. **Read and retain.** Gather passages and choose passage, section, or document scope.
+3. **Check evidence.** Assess whether retained material covers the question.
+4. **Recover.** Visit a promising unexplored branch when more evidence is needed.
+5. **Answer with references.** Synthesize the retained evidence within search budgets.
 
-### Key features
+The study combines a restricted organizational case study with a public
+MultiHop-RAG experiment. This repository provides public inputs and outputs,
+the archived evaluated implementation, and a separately versioned modular package.
 
-- **Corpus-level summarization tree:** preserves folder, document, section, and
-  passage structure instead of flattening the collection into independent chunks.
-- **Agentic tree traversal:** recursively scores visible branches and follows the
-  strongest route toward relevant evidence.
-- **Cross-document retention:** accumulates passages across traversal steps and
-  documents before composing an answer.
-- **Corpus-global recovery:** a teleport frontier resumes from the strongest
-  unexplored node at any depth after an unproductive branch.
-- **Evidence-aware reading:** scope selection, same-document sweeps, and an
-  evidence-sufficiency gate determine whether to answer or continue searching.
-- **Bounded and auditable execution:** explicit budgets limit model calls and
-  visited nodes, while traces and source identifiers support inspection.
-- **Open-weight deployment:** TreeRAG uses an Ollama-compatible endpoint and
-  can run inside the same approved compute boundary as confidential data.
-- **No dense-vector evidence retrieval:** evidence is reached through tree
-  navigation rather than a dense retrieval index.
+**Signal boundary.** TreeRAG does not use a dense-vector index to select evidence.
+Its controller also uses lexical frontier seeding. The archived evaluated runner
+contains optional embedding-based ordering of names in over-wide previews, with
+a lexical fallback; the retained logs do not establish whether embedding calls
+succeeded. The modular package disables that auxiliary embedding step by default.
+Consequently, the archived experiment should not be described as strictly
+agent-only or proven vector-free. See [architecture](docs/ARCHITECTURE.md) and
+[implementation provenance](REPRODUCIBILITY.md).
 
-### What this release contains
+## Public results
 
-- `src/treerag/`: the documented modular controller and command-line interface.
-- `reference/evaluated_v0/`: immutable source snapshots for the evaluated method.
-- `experiments/multihop_rag/`: the frozen public sample, runner, official
-  evaluator adapter, aggregate outputs, and pinned upstream evaluator.
-- `data/multihop_rag_demo/corpus_tree.json`: a committed public tree with 20,495
-  nodes over 609 MultiHop-RAG articles.
-- `tests/`: synthetic unit and controller tests that do not require corpus data.
+Frozen balanced sample: **200 MultiHop-RAG questions**, 50 of each type, over
+609 public news articles. Retrieval metrics use the 150 non-null questions.
+
+| System | Official QA accuracy | Hits@10 | MAP@10 | MRR@10 |
+|---|---:|---:|---:|---:|
+| TreeRAG evaluated-v0 | 0.495 | 0.6933 | 0.2258 | 0.4612 |
+| Flat hybrid | 0.415 | unavailable | unavailable | unavailable |
+| Collapsed-tree search | 0.325 | 0.4800 | 0.1058 | 0.2539 |
+| Gold-context diagnostic | 0.435 | 1.0000 | 0.6700 | 1.0000 |
+
+The official QA rule accepts any answer-token overlap and is not a semantic
+correctness measure. A separate joint LLM judge gives a mean paired TreeRAG
+advantage of 0.041 over flat hybrid, with 95% bootstrap CI [-0.02925, 0.11150];
+this difference remains uncertain. Baselines use different retrieval and model-call
+budgets, so these results do not isolate the causal effect of tree structure.
+They are not full-dataset leaderboard results. [Full metrics and limitations](RESULTS.md)
 
 ## Getting started
 
-### Package requirements
+### Install and test without a model
 
-- Python 3.11 or 3.12
-- An Ollama-compatible endpoint
-- Enough memory for the selected open-weight model
-- Approximately 30 MB of free space for the committed public tree
-
-### Install
+Use Python 3.11 or 3.12 and [uv](https://docs.astral.sh/uv/):
 
 ```bash
-git clone https://github.com/asharma395/treerag.git
+git clone https://github.com/asharma391/tree-rag.git
 cd tree-rag
-uv sync
-```
-
-### Configure the model endpoint
-
-TreeRAG uses an Ollama-compatible endpoint. For a local Ollama deployment:
-
-```bash
-ollama pull gpt-oss:120b
-export TREERAG_OLLAMA_URL=http://127.0.0.1:11434
-export TREERAG_MODEL=gpt-oss:120b
-curl -fsS "$TREERAG_OLLAMA_URL/api/version"
-```
-
-For remote compute, set `TREERAG_OLLAMA_URL` to the endpoint reachable inside your approved environment. Do not send confidential corpus content to a third-party model service.
-
-### Build the MultiHop-RAG tree
-
-The smoke test and a complete tree build use the same builder, models, and summarization
-prompts. For a smoke test, stop after the progress bar begins moving. For a complete
-build, leave the same command running until it finishes. Every invocation writes to a
-new versioned cache and never overwrites the committed demonstration tree:
-
-```bash
-export TREERAG_OLLAMA_URL=http://127.0.0.1:11434
-export TREERAG_MODEL=gpt-oss:120b
-export TREERAG_BUILD_WORKERS=4
-RUN_ROOT="$HOME/treerag-runs/build-smoke-$(date +%Y%m%d_%H%M%S)"
-mkdir -p "$RUN_ROOT"
-export TREERAG_CACHE_DIR="$RUN_ROOT/tree_cache"
-uv run ./scripts/build_tree.sh
-```
-
-The script first materializes and parses 609 public documents. Wait until
-`2/3 text [gpt-oss:120b]` reports completed calls and an ETA, then press `Ctrl-C`
-once if this is only a smoke test. Pending work is cancelled and completed parse/node
-caches are preserved. Do not interrupt the process when producing a complete tree.
-MultiHop-RAG is text-only, so the frozen builder correctly reports
-`gemma3:27b ... describe=False` and makes no vision calls.
-
-The completed tree is written to `$TREERAG_CACHE_DIR/corpus_tree.json`. This workflow
-was exercised on August 13, 2026 with Ollama 0.30.10; it planned 19,971 calls and
-displayed a live ETA. Timing varies with shared-server load.
-
-### Answer a single query
-
-Querying the committed tree exercises one complete retrieval-and-answer cycle without
-rebuilding the hierarchy. Keep the tunnel terminal open, then run in a second terminal:
-
-```bash
-export TREERAG_OLLAMA_URL=http://127.0.0.1:11434
-export TREERAG_MODEL=gpt-oss:120b
-export TREERAG_MODE=thorough
-RUN_ROOT="$HOME/treerag-runs/query-$(date +%Y%m%d_%H%M%S)"
-mkdir -p "$RUN_ROOT"
-uv run ./scripts/query_single_question.sh \
-  "Which developments are compared across multiple reports?" \
-  | tee "$RUN_ROOT/query.json"
-```
-
-The JSON response contains the answer, source identifiers, elapsed time, model calls,
-and operating mode. The thorough query used to validate this workflow completed with
-26 model calls in 124.36 seconds.
-
-### Generate benchmark responses
-
-The benchmark launcher runs the frozen evaluated-v0 prompts and controller over the
-reported balanced sample of 200 MultiHop-RAG questions. It uses the committed public
-tree by default and writes every run to a new timestamped report:
-
-```bash
-export TREERAG_OLLAMA_URL=http://127.0.0.1:11434
-export TREERAG_MODEL=gpt-oss:120b
-uv run ./scripts/run_multihop_benchmark.sh
-```
-
-The launcher prints the report path before starting. To resume an interrupted run,
-explicitly provide that same path; otherwise a new report is always created:
-
-```bash
-export TREERAG_BENCHMARK_REPORT="$HOME/treerag-runs/treerag_public_rerun.json"
-uv run ./scripts/run_multihop_benchmark.sh
-```
-
-This reproduces the response-generation stage reported in the study. It does not claim
-to run all 2,556 MultiHop-RAG questions. Run the official evaluator afterward as
-described in [the experiment guide](experiments/multihop_rag/README.md).
-
-## How TreeRAG retrieves evidence
-
-1. **Build the summarization tree.** Each node describes its children while
-   preserving the path from corpus to folder, document, section, and passage.
-2. **Traverse and retain.** The model scores visible branches, descends into the
-   strongest candidate, and retains relevant passages.
-3. **Decide scope.** When evidence is reached, the controller can retain the
-   passage, its section, or its document according to the question.
-4. **Sweep locally.** Other high-scoring sections from the same document can be
-   read while unrelated sections are skipped.
-5. **Check sufficiency.** A gate asks whether the retained evidence answers the
-   question completely.
-6. **Answer or revisit the frontier.** If evidence is incomplete, TreeRAG jumps
-   to the best unexplored node at any depth and continues within budget.
-
-## Reproducing the public evaluation
-
-The artifact includes the frozen question sample, exact benchmark runner,
-official MultiHop-RAG evaluator adapter, aggregate outputs, and pinned upstream
-evaluator:
-
-```bash
-cd experiments/multihop_rag
-uv run python official_multihop_eval.py --help
-```
-
-The exact executed runner is preserved at
-`reference/evaluated_v0/benchmark_treerag_public_frozen_v0.py`. The runnable
-experiment copy changes only runtime path, model, and endpoint configuration.
-Read [the experiment guide](experiments/multihop_rag/README.md) before launching
-a full run. It is expensive, and each output must use a new versioned path.
-
-See [RESULTS.md](RESULTS.md) for metrics, uncertainty, controls, and limitations.
-See [REPRODUCIBILITY.md](REPRODUCIBILITY.md) for the artifact checklist.
-
-## Advanced settings
-
-### Search modes
-
-- `thorough`: the primary research operating point, with a larger traversal
-  budget and full evidence checks.
-- `quick`: a lower-cost sensitivity setting with a smaller search budget.
-
-### Runtime configuration
-
-```bash
-export TREERAG_OLLAMA_URL=http://127.0.0.1:11434
-export TREERAG_MODEL=gpt-oss:120b
+uv sync --frozen
+uv run pytest -q
 uv run treerag --help
 ```
 
-Do not edit a frozen result file in place. Use a new output path for every run so
-earlier experiments remain recoverable.
+The default installation includes query, test, and saved-result evaluation
+dependencies. Document-building dependencies are installed only with `--extra build`.
+The synthetic tests require neither private data nor a model endpoint. The
+committed public tree is approximately 29 MB. Source installation without uv:
 
-## Evaluated implementation and vector boundary
+```bash
+python -m pip install -e '.[build,test]'
+```
 
-Reported experiments use **evaluated-v0**, preserved as an immutable source
-snapshot. The modular package is a hardened release port with bounded retries,
-queue hygiene, tree validation, and a lexical-only default for over-wide
-candidate presentation. Results are never retrospectively relabeled across
-these versions.
+### Query the committed tree
 
-TreeRAG does not use a dense index to retrieve evidence: the LLM scores tree
-branches, and evidence is reached through navigation. For scientific precision,
-evaluated-v0 used local embeddings only to order names displayed inside an
-over-wide `contains:` preview. The modular release defaults
-`max_embed_per_decision=0` and uses lexical ordering. The evaluated method is
-therefore described as **LLM-routed tree retrieval without dense-vector evidence
-retrieval**, not as having no vector computation anywhere.
+Configure an Ollama-compatible endpoint with the chosen model available. The
+reported model is `gpt-oss:120b`, which requires substantial compute; an existing
+approved remote deployment is suitable. A different model is an unmeasured setting.
+
+```bash
+export TREERAG_OLLAMA_URL=http://127.0.0.1:11434
+export TREERAG_MODEL=gpt-oss:120b
+uv run treerag "Which developments are compared across multiple reports?" \
+  --tree data/multihop_rag_demo/corpus_tree.json --mode thorough
+```
+
+The CLI emits JSON containing the answer, source references, runtime, model calls,
+and mode. For progress during a query, use:
+
+```bash
+uv run ./scripts/query_single_question.sh "Your question"
+```
+
+See [remote compute](docs/REMOTE_COMPUTE.md) for persistent sessions and a generic
+SSH tunnel. No institutional account is needed to use the public corpus.
+
+## Reproducing the public study
+
+### Recompute saved-result metrics without model calls
+
+The frozen question sample, answers, full TreeRAG report, and pinned official
+evaluator are included. Follow the exact command in the
+[experiment guide](experiments/multihop_rag/README.md#official-evaluation).
+Every new evaluation writes a new output; released results remain unchanged.
+
+### Regenerate answers with evaluated-v0
+
+```bash
+export TREERAG_OLLAMA_URL=http://127.0.0.1:11434
+export TREERAG_MODEL=gpt-oss:120b
+uv run --extra build ./scripts/run_multihop_benchmark.sh
+```
+
+This runs the archived controller with corrected missing-only resume scheduling
+on the frozen 200-question sample and creates
+a timestamped report. It requires many model calls. It does not run all 2,556
+questions. The modular CLI and archived benchmark are distinct implementations;
+the reported results belong to evaluated-v0.
+
+### Rebuild the public hierarchy
+
+```bash
+export TREERAG_CACHE_DIR="$PWD/work/public-tree-$(date -u +%Y%m%dT%H%M%SZ)"
+uv run --extra build ./scripts/build_tree.sh
+```
+
+This materializes the public articles, then parses and summarizes them. The
+committed demonstration tree stays unchanged. The recorded full build required
+19,976 model calls and 49,401 seconds. Preserve the frozen sample when downloading
+data; see the experiment guide for dataset provenance and rerun limitations.
+
+## Custom corpora
+
+The release builder accepts a document directory and a separate cache location:
+
+```bash
+export TREERAG_DOCS_ROOT=/absolute/path/to/documents
+export TREERAG_CACHE_DIR=/absolute/path/to/new/tree-cache
+uv run --extra build python scripts/build_tree.py
+uv run treerag "Your question" --tree "$TREERAG_CACHE_DIR/corpus_tree.json"
+```
+
+Keep original folder organization where it conveys useful structure. Run the
+corpus, cache, inference endpoint, and outputs within the approved data boundary.
+Never mix restricted and public caches. [Data policy](DATA_POLICY.md)
+
+## Configuration
+
+| Setting | Purpose |
+|---|---|
+| `TREERAG_OLLAMA_URL` | Model endpoint; defaults to `http://127.0.0.1:11434` |
+| `TREERAG_MODEL` | Routing and answer model; defaults to `gpt-oss:120b` |
+| `TREERAG_TREE_PATH` | Tree path for the modular package |
+| `--mode thorough` | Primary modular configuration with larger budgets |
+| `--mode quick` | Lower-budget modular sensitivity setting |
+| `TREERAG_BENCHMARK_REPORT` | Explicit archived-run checkpoint to resume |
+
+See [configuration source](src/treerag/config.py), [example environment](.env.example),
+and [presets](configs). Time budgets are cooperative checks between requests,
+not preemptive wall-clock deadlines.
 
 ## Repository layout
 
 ```text
-src/treerag/                 modular controller and CLI
-scripts/                       query and tree-build launchers
-data/multihop_rag_demo/        committed public demonstration tree
-experiments/multihop_rag/      frozen sample, runners, evaluator, public outputs
-reference/evaluated_v0/        immutable evaluated source snapshots
-docs/                          architecture and remote-compute guidance
-tests/                         synthetic unit and controller tests
+src/treerag/               modular controller, typed configuration, CLI
+scripts/                   query, build, and benchmark entry points
+configs/                   quick and thorough environment presets
+data/multihop_rag_demo/    committed public hierarchy
+experiments/multihop_rag/ public sample, controls, outputs, official evaluator
+reference/evaluated_v0/   archived evaluated source and provenance hashes
+docs/                      architecture and deployment guidance
+tests/                     offline unit, traversal, and artifact tests
 ```
 
-## Data, privacy, and licensing
+## Provenance and next steps
 
-MultiHop-RAG is licensed under ODC-BY. TreeRAG source is GPL-3.0-or-later. See
-[DATA_POLICY.md](DATA_POLICY.md) and [SECURITY.md](SECURITY.md).
+This is a fork of [courtotlab/tree-rag](https://github.com/courtotlab/tree-rag),
+preserving its development history. Applicable updates from the earlier personal
+release have been reconciled onto that history. Historical repository contents
+have not been rewritten or certified for anonymous distribution; an anonymous
+review artifact requires separate inspection.
 
-Never commit private corpora, trees, questions, answers, traces, credentials,
-endpoints, or result files. For confidential collections, run both TreeRAG and
-the open-weight model inside the approved organizational compute boundary.
-
-## Next steps
-
-Next steps can consider running the remaining public controls and evaluating
-other systems like Psi-RAG as a separate external baseline. They would broaden
-public-benchmark coverage and help position TreeRAG against a recent
-vector-assisted retrieval system.
+Current research gaps include human evaluation and inter-rater agreement,
+equal-budget comparisons, an evaluated embedding-disabled variant, and broader
+public benchmark coverage. These are open work, not completed results.
 
 ## Acknowledgements
 
-TreeRAG grew from the TreeRAG project in Genome Informatics at the Ontario
-Institute for Cancer Research, with work by Arjun Sharma, Jochen Weile, Kayla
-Marsh, and Melanie Courtot. The project was supported by the University of
-Toronto Data Sciences Institute and the Government of Ontario.
+The project grew from work in Genome Informatics at the Ontario Institute for
+Cancer Research by Arjun Sharma, Jochen Weile, Kayla Marsh, and Mélanie Courtot,
+with support from the University of Toronto Data Sciences Institute and the
+Government of Ontario. This README uses the navigation pattern of
+[Psi-RAG](https://github.com/Newiz430/Psi-RAG); the systems and experiments are independent.
+
+Source code is GPL-3.0-or-later. MultiHop-RAG data is ODC-BY; see
+[the dataset card](experiments/multihop_rag/DATASET_CARD.md).
 
 ## Citation
 
-Citation metadata is provided in [CITATION.cff](CITATION.cff). The manuscript is
-intentionally excluded from this repository before publication.
+Software metadata is in [CITATION.cff](CITATION.cff). A publication citation will
+be added once available; the unpublished manuscript is not included here.

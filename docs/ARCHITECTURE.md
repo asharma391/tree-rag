@@ -35,13 +35,14 @@ wall-clock budgets.
 
 A governed hierarchy is stable, human-auditable, and already maintained for operational
 reasons. TreeRAG tests that regime rather than claiming every corpus has a useful native
-tree. PageIndex File System is the closest disclosed collection-scale architecture; it
-adds query-dependent virtual nodes and dynamic flattening for weak hierarchies. TreeRAG
-instead studies a frozen native hierarchy with a released controller and paired empirical
-evaluation.
+tree. Claims concern retrieval over preserved document structure; alternative
+collection-level tree methods require separate matched evaluation.
 
 ## Vector-signal boundary
 
-Evidence is not selected by nearest-neighbor lookup. In evaluated-v0, embeddings only
-order names inside an over-wide preview before the LLM scores branches. Modular-v1 sets
-that helper to zero and uses lexical ordering. Always report the version used.
+Evidence is not selected by nearest-neighbor lookup. The controller uses LLM
+branch scores and corpus-wide lexical frontier seeds. The evaluated-v0 source
+contains optional embedding ordering of names inside over-wide previews, with a
+lexical fallback; the retained telemetry does not establish successful activation.
+Modular-v1 defaults to zero embedding calls for that helper. Preserve these
+qualifications rather than claiming the historical run was proven vector-free.

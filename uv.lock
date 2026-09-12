@@ -932,8 +932,16 @@ build = [
     { name = "rank-bm25" },
     { name = "tqdm" },
 ]
+eval = [
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "tqdm" },
+]
 test = [
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pytest" },
+    { name = "tqdm" },
 ]
 
 [package.dev-dependencies]
@@ -949,13 +957,18 @@ demo = [
     { name = "tqdm" },
 ]
 test = [
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pytest" },
+    { name = "tqdm" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "loguru", specifier = ">=0.7" },
     { name = "numpy", marker = "extra == 'build'", specifier = ">=2.0" },
+    { name = "numpy", marker = "extra == 'eval'", specifier = ">=2.0" },
+    { name = "numpy", marker = "extra == 'test'", specifier = ">=2.0" },
     { name = "ollama", specifier = ">=0.5" },
     { name = "openpyxl", marker = "extra == 'build'", specifier = ">=3.1" },
     { name = "pandas", marker = "extra == 'build'", specifier = ">=2.0" },
@@ -965,8 +978,10 @@ requires-dist = [
     { name = "python-docx", marker = "extra == 'build'", specifier = ">=1.2" },
     { name = "rank-bm25", marker = "extra == 'build'", specifier = ">=0.2.2" },
     { name = "tqdm", marker = "extra == 'build'", specifier = ">=4.67" },
+    { name = "tqdm", marker = "extra == 'eval'", specifier = ">=4.67" },
+    { name = "tqdm", marker = "extra == 'test'", specifier = ">=4.67" },
 ]
-provides-extras = ["build", "test"]
+provides-extras = ["build", "eval", "test"]
 
 [package.metadata.requires-dev]
 demo = [
@@ -979,7 +994,11 @@ demo = [
     { name = "rank-bm25", specifier = ">=0.2.2" },
     { name = "tqdm", specifier = ">=4.67" },
 ]
-test = [{ name = "pytest", specifier = ">=8.0" }]
+test = [
+    { name = "numpy", specifier = ">=2.0" },
+    { name = "pytest", specifier = ">=8.0" },
+    { name = "tqdm", specifier = ">=4.67" },
+]
 
 [[package]]
 name = "typing-extensions"

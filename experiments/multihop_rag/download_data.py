@@ -75,7 +75,12 @@ def main() -> None:
     queries = json.loads(download("MultiHopRAG.json").read_text(encoding="utf-8"))
     materialize(corpus)
     sample = sample_queries(queries)
-    (INPUT / "sample_200.json").write_text(json.dumps(sample, indent=2), encoding="utf-8")
+    sample_path = INPUT / "sample_200.json"
+    if sample_path.exists():
+        if json.loads(sample_path.read_text(encoding="utf-8")) != sample:
+            raise ValueError("downloaded dataset produces a different sample; refusing to overwrite the frozen manifest")
+    else:
+        sample_path.write_text(json.dumps(sample, indent=2), encoding="utf-8")
     print(f"materialized {len(corpus)} documents; sampled {len(sample)} questions")
 
 

@@ -1,8 +1,7 @@
 # Frozen public results
 
-This public repository reports only the MultiHop-RAG study. Restricted deployment
-statistics remain in the private research repository and unpublished manuscript; no
-private-derived result artifact is published here.
+This page reports the public MultiHop-RAG study. Restricted deployment evidence
+is separate; no new restricted per-question artifact is added by this release.
 
 ## MultiHop-RAG
 
@@ -33,3 +32,27 @@ producing a 28.7 MB JSON tree with 20,495 nodes and 19,212 chunks.
 
 The immutable machine-readable source is
 `experiments/multihop_rag/results/treerag_official_multihop_eval_v2_20260813.json`.
+
+## Interpretation and corrected metadata
+
+The joint judge uses continuous scores in [0,1]. The original aggregate's metric
+name ends in `0_0.5_1`, but saved values include partial credit such as 0.9 and
+0.25; that label is incorrect. The original artifact is retained unchanged;
+new evaluations identify the scale correctly.
+
+The systems do not share a model-call budget. Flat hybrid uses BM25 and dense
+retrieval with reciprocal-rank fusion followed by one answer call; collapsed
+search uses dense top-10 retrieval over tree nodes followed by one answer call.
+The comparison does not causally isolate tree structure or establish superiority
+under equal compute.
+
+The archived TreeRAG `seconds` measurement includes the joint judge, while the
+reported successful-call count excludes its separate counter. Flat baseline
+`elapsed_sec` covers answer generation only, excluding retrieval. Treat these as
+recorded costs with different measurement boundaries, not directly comparable
+end-to-end latency estimates.
+
+The historical runner's development-oriented resume queue could replay losses
+while retaining wins/ties. The final public checkpoint alone does not establish
+whether that behavior was used. Future runs use a score-independent missing-only
+resume policy with separate provenance; archived results remain unchanged.

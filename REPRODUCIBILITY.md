@@ -7,7 +7,8 @@ number is valid only for the named implementation, data manifest, model, and eva
 
 - **evaluated-v0** is the immutable implementation that generated the 294-question
   restricted deployment study, 63-question ablations, and frozen 200-question public
-  run. Exact source snapshots are under `reference/evaluated_v0/`.
+  run. Source snapshots and the pre-rename hash provenance are under
+  `reference/evaluated_v0/`.
 - **modular-v1** is the documented package under `src/treerag/`. It preserves the
   controller design while adding bounded retries, queue hygiene, unique-ID validation,
   exact evidence/call caps, and lexical-only wide-node ordering by default.
@@ -66,3 +67,21 @@ All frozen questions stay in the denominator. Endpoint failures, malformed model
 timeouts, or absent answers are recorded rather than silently dropped. Retrying follows
 the frozen bounded policy. Any protocol change creates a dated deviation record and a
 new output path.
+
+## Rerun protocol repair (2026-09-12)
+
+The configurable public runner now labels new outputs
+`evaluated-v0-resume-fixed-20260912`. It preserves completed question outcomes
+independently of score and resumes only missing IDs; old checkpoints cannot be
+silently overwritten. This repairs an outcome-selective development queue in the
+archived source. The original run history cannot be inferred from a final report.
+Retrieval and answer logic remain archived-v0; this is not a modular-v1 experiment.
+
+The official adapter can reconstruct the collapsed text index from the committed
+tree without inference, producing the exact original input hash. It verifies
+upstream evaluator bytes and requires complete matched question and score pairs.
+Version 3 corrects the joint-judge scale label to continuous [0,1]. The archived
+version-2 aggregate and underlying answers remain immutable.
+
+Repository history is retained for attribution and has not been anonymized or
+scrubbed. Current-tip cleanup is not a guarantee about older revisions.
