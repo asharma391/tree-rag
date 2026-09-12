@@ -81,16 +81,17 @@ the regulated deployment.
 ## Outcomes and comparability
 
 The original paper reports answer accuracy for short answers and also evaluates
-retrieval against supporting evidence. The TreeRAG study uses blinded joint
-scores in {0, 0.5, 1} for free-form system answers. These outcome definitions
+retrieval against supporting evidence. The TreeRAG study uses joint judge
+scores on a continuous [0,1] scale for free-form system answers; saved partial
+credit includes values such as 0.9 and 0.25. These outcome definitions
 are not numerically interchangeable. TreeRAG results cannot be compared
 directly with the original paper's accuracy table as though they used the same
 judge, prompts, answer format, retrieval context, or model.
 
 Primary TreeRAG inference uses gpt-oss:120b. The same model is used for the
-main model judge, with balanced answer ordering and a separate order-sensitivity
-audit. Human/LLM agreement is reported only after the study team supplies
-approved aggregate validation statistics.
+main model judge, so shared-model preferences and answer-order effects remain
+possible. Human/LLM agreement is pending and will be reported only after the
+study team supplies approved aggregate validation statistics.
 
 ## Known limitations
 
@@ -111,9 +112,9 @@ coverage of a large folder.
 
 The 2023 article window reduced contamination for models available when the
 dataset was created. A model released or trained later may have encountered the
-articles, paper, repository, or generated questions. The closed-book control
-quantifies answerability from model priors on the frozen sample but cannot prove
-that no training contamination occurred.
+articles, paper, repository, or generated questions. A closed-book control would
+help measure answerability from model priors on the frozen sample but could not
+prove that no training contamination occurred.
 
 ### Null oversampling
 
@@ -131,8 +132,9 @@ naming conventions.
 ### LLM judging
 
 The answer model and primary judge share a model family and endpoint. Blinding,
-balanced order, order reversal, and human validation reduce but do not eliminate
-shared-model bias.
+balanced order, order reversal, and human validation can reduce shared-model
+bias, but the released aggregate does not establish those mitigations as complete.
+Human judgments and inter-rater agreement remain pending.
 
 ## Required release provenance
 
