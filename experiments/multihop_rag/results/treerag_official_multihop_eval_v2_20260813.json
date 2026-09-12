@@ -1,0 +1,359 @@
+{
+  "schema_version": "treerag.multihop-rag-official-eval.v2",
+  "created_utc": "2026-08-13T15:18:10.726835+00:00",
+  "scope": {
+    "dataset": "MultiHop-RAG",
+    "sample": "balanced frozen 200-question sample, seed 20260806",
+    "sample_counts": {
+      "comparison_query": 50,
+      "inference_query": 50,
+      "temporal_query": 50,
+      "null_query": 50
+    },
+    "external_comparability": "metric implementation is official; sample distribution differs from the full natural-prevalence dataset and must be disclosed"
+  },
+  "official_implementation": {
+    "repository": "https://github.com/yixuantt/MultiHop-RAG",
+    "commit": "cde8e844af14b3012f20158abc2854fe8458212a",
+    "retrieval_evaluate_sha256": "6734516f0d5f9385076f76bf4e08d54968541fdb05f519f1cf687c0b65ae0f90",
+    "qa_evaluate_sha256": "a518bc37d94d2e84cc9012b41a758567e308dceea92aba14cda44a1364626ae7"
+  },
+  "inputs": {
+    "sample_sha256": "cfad8ef830c90082bb9f02716aaf91defb77c047b2a2bd6abd4f19a2234593ab",
+    "treerag_report_sha256": "f4abd29e46f989f85ac3008038fb2678afa101073517f3a838b2bf2f27e5f8eb",
+    "public_tree_sha256": "377957eb6c66163fe7ad3388daee840b1e9d8d8bf84569f27950beabd37836a1",
+    "collapsed_answers_sha256": "a99ea251c4e5802e7a69153ea64b5fc4317bd853b5c72ea3defc26d78ad4cbfb",
+    "oracle_answers_sha256": "3eb1fb86ea1695a4916800faa522d9a8b8563dc6bad9dec11b2cf4981f3e7d09",
+    "collapsed_nodes_sha256": "b15d1679963138a7d68cf97f031b7677d5aa5b9af3aab56a1e4affedb36193cf"
+  },
+  "retrieval_adapter": {
+    "ordered_unit": "first-visit read_file trace event mapped to public chunk text",
+    "deduplication": "public node_id, preserving first-visit order",
+    "navigation_nodes": "excluded because folders are not retrieved passages",
+    "null_queries": "excluded by official retrieval protocol",
+    "coverage": {
+      "non_null_questions": 150,
+      "ordered_unique_passage_visits": 940,
+      "duplicate_passage_visits_removed": 0,
+      "navigation_only_nonpassage_events_excluded": 1,
+      "unresolved_passage_events": 0,
+      "ambiguous_passage_events": 0,
+      "retrieved_passages_per_question": {
+        "minimum": 1,
+        "median": 7.0,
+        "mean": 6.266666666666667,
+        "maximum": 13,
+        "fewer_than_4": 57,
+        "fewer_than_10": 112
+      }
+    }
+  },
+  "official_retrieval": {
+    "treerag": {
+      "n": 150,
+      "metrics": {
+        "Hits@10": 0.6933333333333334,
+        "Hits@4": 0.6666666666666666,
+        "MAP@10": 0.22584700176366843,
+        "MRR@10": 0.46116402116402117
+      },
+      "by_question_type": {
+        "comparison_query": {
+          "n": 50,
+          "metrics": {
+            "Hits@10": 0.7,
+            "Hits@4": 0.7,
+            "MAP@10": 0.2838888888888889,
+            "MRR@10": 0.49666666666666665
+          }
+        },
+        "inference_query": {
+          "n": 50,
+          "metrics": {
+            "Hits@10": 0.72,
+            "Hits@4": 0.68,
+            "MAP@10": 0.1745383597883598,
+            "MRR@10": 0.42507936507936506
+          }
+        },
+        "temporal_query": {
+          "n": 50,
+          "metrics": {
+            "Hits@10": 0.66,
+            "Hits@4": 0.62,
+            "MAP@10": 0.21911375661375662,
+            "MRR@10": 0.4617460317460318
+          }
+        }
+      }
+    },
+    "flat_hybrid": {
+      "status": "unavailable",
+      "reason": "the stored answer artifact records document titles, but its flat index contains multiple distinct passages per title; exact ranked passage identity cannot be reconstructed without replaying retrieval"
+    },
+    "collapsed": {
+      "n": 150,
+      "metrics": {
+        "Hits@10": 0.48,
+        "Hits@4": 0.35333333333333333,
+        "MAP@10": 0.10576962081128748,
+        "MRR@10": 0.2538756613756614
+      },
+      "by_question_type": {
+        "comparison_query": {
+          "n": 50,
+          "metrics": {
+            "Hits@10": 0.38,
+            "Hits@4": 0.24,
+            "MAP@10": 0.07520634920634921,
+            "MRR@10": 0.14535714285714285
+          }
+        },
+        "inference_query": {
+          "n": 50,
+          "metrics": {
+            "Hits@10": 0.58,
+            "Hits@4": 0.48,
+            "MAP@10": 0.1290601851851852,
+            "MRR@10": 0.36666666666666664
+          }
+        },
+        "temporal_query": {
+          "n": 50,
+          "metrics": {
+            "Hits@10": 0.48,
+            "Hits@4": 0.34,
+            "MAP@10": 0.11304232804232804,
+            "MRR@10": 0.24960317460317458
+          }
+        }
+      },
+      "mapping_coverage": {
+        "non_null_questions": 150,
+        "ordered_passages": 1500,
+        "unresolved_passages": 0,
+        "ambiguous_passages": 0
+      }
+    },
+    "oracle": {
+      "n": 150,
+      "metrics": {
+        "Hits@10": 1.0,
+        "Hits@4": 1.0,
+        "MAP@10": 0.6700462962962963,
+        "MRR@10": 1.0
+      },
+      "by_question_type": {
+        "comparison_query": {
+          "n": 50,
+          "metrics": {
+            "Hits@10": 1.0,
+            "Hits@4": 1.0,
+            "MAP@10": 0.7222222222222221,
+            "MRR@10": 1.0
+          }
+        },
+        "inference_query": {
+          "n": 50,
+          "metrics": {
+            "Hits@10": 1.0,
+            "Hits@4": 1.0,
+            "MAP@10": 0.5990277777777777,
+            "MRR@10": 1.0
+          }
+        },
+        "temporal_query": {
+          "n": 50,
+          "metrics": {
+            "Hits@10": 1.0,
+            "Hits@4": 1.0,
+            "MAP@10": 0.6888888888888889,
+            "MRR@10": 1.0
+          }
+        }
+      },
+      "mapping_coverage": {
+        "non_null_questions": 150,
+        "ordered_gold_passages_supplied_to_generator": 393
+      },
+      "interpretation": "gold-context diagnostic, not a deployable retriever"
+    }
+  },
+  "official_qa": {
+    "treerag": {
+      "comparison_query": {
+        "n": 50,
+        "precision": 0.12,
+        "recall": 0.12,
+        "f1": 0.12,
+        "accuracy": 0.12
+      },
+      "inference_query": {
+        "n": 50,
+        "precision": 0.88,
+        "recall": 0.88,
+        "f1": 0.88,
+        "accuracy": 0.88
+      },
+      "null_query": {
+        "n": 50,
+        "precision": 0.94,
+        "recall": 0.94,
+        "f1": 0.94,
+        "accuracy": 0.94
+      },
+      "overall": {
+        "n": 200,
+        "precision": 0.495,
+        "recall": 0.495,
+        "f1": 0.495,
+        "accuracy": 0.495
+      },
+      "temporal_query": {
+        "n": 50,
+        "precision": 0.04,
+        "recall": 0.04,
+        "f1": 0.04,
+        "accuracy": 0.04
+      }
+    },
+    "flat_hybrid": {
+      "comparison_query": {
+        "n": 50,
+        "precision": 0.02,
+        "recall": 0.02,
+        "f1": 0.02,
+        "accuracy": 0.02
+      },
+      "inference_query": {
+        "n": 50,
+        "precision": 0.58,
+        "recall": 0.58,
+        "f1": 0.58,
+        "accuracy": 0.58
+      },
+      "null_query": {
+        "n": 50,
+        "precision": 0.98,
+        "recall": 0.98,
+        "f1": 0.98,
+        "accuracy": 0.98
+      },
+      "overall": {
+        "n": 200,
+        "precision": 0.415,
+        "recall": 0.415,
+        "f1": 0.415,
+        "accuracy": 0.415
+      },
+      "temporal_query": {
+        "n": 50,
+        "precision": 0.08,
+        "recall": 0.08,
+        "f1": 0.08,
+        "accuracy": 0.08
+      }
+    },
+    "collapsed": {
+      "comparison_query": {
+        "n": 50,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.0
+      },
+      "inference_query": {
+        "n": 50,
+        "precision": 0.28,
+        "recall": 0.28,
+        "f1": 0.28,
+        "accuracy": 0.28
+      },
+      "null_query": {
+        "n": 50,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "accuracy": 1.0
+      },
+      "overall": {
+        "n": 200,
+        "precision": 0.325,
+        "recall": 0.325,
+        "f1": 0.325,
+        "accuracy": 0.325
+      },
+      "temporal_query": {
+        "n": 50,
+        "precision": 0.02,
+        "recall": 0.02,
+        "f1": 0.02,
+        "accuracy": 0.02
+      }
+    },
+    "oracle": {
+      "comparison_query": {
+        "n": 50,
+        "precision": 0.02,
+        "recall": 0.02,
+        "f1": 0.02,
+        "accuracy": 0.02
+      },
+      "inference_query": {
+        "n": 50,
+        "precision": 0.62,
+        "recall": 0.62,
+        "f1": 0.62,
+        "accuracy": 0.62
+      },
+      "null_query": {
+        "n": 50,
+        "precision": 0.98,
+        "recall": 0.98,
+        "f1": 0.98,
+        "accuracy": 0.98
+      },
+      "overall": {
+        "n": 200,
+        "precision": 0.435,
+        "recall": 0.435,
+        "f1": 0.435,
+        "accuracy": 0.435
+      },
+      "temporal_query": {
+        "n": 50,
+        "precision": 0.12,
+        "recall": 0.12,
+        "f1": 0.12,
+        "accuracy": 0.12
+      }
+    }
+  },
+  "matched_joint_judge": {
+    "metric": "shared_gpt_oss_120b_joint_judge_score_0_0.5_1",
+    "n": 200,
+    "treerag_mean": 0.639,
+    "flat_hybrid_mean": 0.598,
+    "mean_paired_difference": 0.040999999999999995,
+    "paired_bootstrap_95_percent_ci": [
+      -0.029249999999999998,
+      0.11149999999999999
+    ],
+    "paired_sign_flip_randomization_p_value_two_sided": 0.2617686911565442,
+    "wins": 35,
+    "ties": 138,
+    "losses": 27,
+    "bootstrap_samples": 100000,
+    "randomization_samples": 200000,
+    "seed": 20260813,
+    "comparability": "within-study matched comparison; not an official MultiHop-RAG metric"
+  },
+  "reporting_rules": [
+    "Report official retrieval and QA metrics separately from the matched joint judge.",
+    "Do not call the matched joint-judge score retrieval accuracy.",
+    "Do not describe the balanced 200-question sample as the full MultiHop-RAG test set.",
+    "Preserve the original frozen TreeRAG report as an immutable input.",
+    "Treat oracle retrieval as a diagnostic ceiling, not a deployable system.",
+    "Do not report unavailable flat-hybrid retrieval metrics as zero."
+  ]
+}

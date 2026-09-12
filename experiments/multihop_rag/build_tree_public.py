@@ -80,7 +80,7 @@ print("All packages OK" + ("" if HAVE_PYMUPDF4LLM else "  (pymupdf4llm missing)"
 # ---------------------------------------------------------------------------
 # Ollama / models
 # ---------------------------------------------------------------------------
-OLLAMA_URL    = os.environ.get("TREERAG_OLLAMA_URL", "http://127.0.0.1:11528")
+OLLAMA_URL    = os.environ.get("TREERAG_OLLAMA_URL", "http://127.0.0.1:11434")
 SUMMARY_MODEL = os.environ.get("TREERAG_MODEL", "gpt-oss:120b")
 VISION_MODEL  = "gemma3:27b"               # figure descriptions (gpt-oss is text-only!)
 AGENT_MODEL   = "gpt-oss:120b"             # traversal decisions (later stages)

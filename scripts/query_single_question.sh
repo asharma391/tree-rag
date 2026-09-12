@@ -4,7 +4,7 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 QUESTION="${*:-Which developments are compared across multiple reports?}"
 TREE="${TREERAG_TREE_PATH:-$ROOT/data/multihop_rag_demo/corpus_tree.json}"
-export TREERAG_OLLAMA_URL="${TREERAG_OLLAMA_URL:-http://127.0.0.1:11528}"
+export TREERAG_OLLAMA_URL="${TREERAG_OLLAMA_URL:-http://127.0.0.1:11434}"
 export TREERAG_MODEL="${TREERAG_MODEL:-gpt-oss:120b}"
 
 if [[ ! -s "$TREE" ]]; then

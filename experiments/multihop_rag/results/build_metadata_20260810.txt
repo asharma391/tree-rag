@@ -1,0 +1,5 @@
+build_start_utc=2026-08-09T14:09:56Z
+build_end_utc=2026-08-10T03:53:17Z
+wall_seconds=49401
+Total LLM calls: 19976
+Corpus built in 13:42:48

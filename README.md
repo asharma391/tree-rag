@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![CI](https://github.com/courtotlab/tree-rag/actions/workflows/ci.yml/badge.svg)](https://github.com/courtotlab/tree-rag/actions/workflows/ci.yml)
+[![CI](https://github.com/asharma395/treerag/actions/workflows/ci.yml/badge.svg)](https://github.com/asharma395/treerag/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-GPL--3.0--or--later-2F6B3B)](LICENSE)
 
@@ -78,49 +78,30 @@ find and retain the most relevant passages for a question.
 ### Package requirements
 
 - Python 3.11 or 3.12
-- OICR VPN and SSH access to the approved Ollama host
-- Local port `11528` available for the SSH tunnel
+- An Ollama-compatible endpoint
+- Enough memory for the selected open-weight model
 - Approximately 30 MB of free space for the committed public tree
 
 ### Install
 
 ```bash
-git clone git@github.com:courtotlab/tree-rag.git
+git clone https://github.com/asharma395/treerag.git
 cd tree-rag
 uv sync
 ```
 
-### Open the OICR Ollama tunnel
+### Configure the model endpoint
 
-TreeRAG runs on the workstation. Model requests reach the approved OICR Ollama
-service through an SSH local forward; no TreeRAG process or corpus is placed on
-the server.
-
-Keep this command running in a dedicated terminal while using TreeRAG:
+TreeRAG uses an Ollama-compatible endpoint. For a local Ollama deployment:
 
 ```bash
-ssh -NT \
-  -o ExitOnForwardFailure=yes \
-  -o ServerAliveInterval=60 \
-  -o ServerAliveCountMax=3 \
-  -o IdentitiesOnly=yes \
-  -i "$HOME/.ssh/id_ed25519" \
-  -L 127.0.0.1:11528:172.17.0.1:11434 \
-  asharma@ollama.res.oicr.on.ca
-```
-
-The command is silent after connecting. In a second terminal, configure and verify
-the tunneled endpoint:
-
-```bash
-export TREERAG_OLLAMA_URL=http://127.0.0.1:11528
+ollama pull gpt-oss:120b
+export TREERAG_OLLAMA_URL=http://127.0.0.1:11434
 export TREERAG_MODEL=gpt-oss:120b
 curl -fsS "$TREERAG_OLLAMA_URL/api/version"
-curl -fsS "$TREERAG_OLLAMA_URL/api/tags"
 ```
 
-Do not run Ollama locally or bind the forward to a non-loopback address. See the
-[private OICR tunnel runbook](docs/OICR_CLUSTER.md) for both demos.
+For remote compute, set `TREERAG_OLLAMA_URL` to the endpoint reachable inside your approved environment. Do not send confidential corpus content to a third-party model service.
 
 ### Build the MultiHop-RAG tree
 
@@ -130,7 +111,7 @@ build, leave the same command running until it finishes. Every invocation writes
 new versioned cache and never overwrites the committed demonstration tree:
 
 ```bash
-export TREERAG_OLLAMA_URL=http://127.0.0.1:11528
+export TREERAG_OLLAMA_URL=http://127.0.0.1:11434
 export TREERAG_MODEL=gpt-oss:120b
 export TREERAG_BUILD_WORKERS=4
 RUN_ROOT="$HOME/treerag-runs/build-smoke-$(date +%Y%m%d_%H%M%S)"
@@ -156,7 +137,7 @@ Querying the committed tree exercises one complete retrieval-and-answer cycle wi
 rebuilding the hierarchy. Keep the tunnel terminal open, then run in a second terminal:
 
 ```bash
-export TREERAG_OLLAMA_URL=http://127.0.0.1:11528
+export TREERAG_OLLAMA_URL=http://127.0.0.1:11434
 export TREERAG_MODEL=gpt-oss:120b
 export TREERAG_MODE=thorough
 RUN_ROOT="$HOME/treerag-runs/query-$(date +%Y%m%d_%H%M%S)"
@@ -177,7 +158,7 @@ reported balanced sample of 200 MultiHop-RAG questions. It uses the committed pu
 tree by default and writes every run to a new timestamped report:
 
 ```bash
-export TREERAG_OLLAMA_URL=http://127.0.0.1:11528
+export TREERAG_OLLAMA_URL=http://127.0.0.1:11434
 export TREERAG_MODEL=gpt-oss:120b
 uv run ./scripts/run_multihop_benchmark.sh
 ```
@@ -240,7 +221,7 @@ See [REPRODUCIBILITY.md](REPRODUCIBILITY.md) for the artifact checklist.
 ### Runtime configuration
 
 ```bash
-export TREERAG_OLLAMA_URL=http://127.0.0.1:11528
+export TREERAG_OLLAMA_URL=http://127.0.0.1:11434
 export TREERAG_MODEL=gpt-oss:120b
 uv run treerag --help
 ```
