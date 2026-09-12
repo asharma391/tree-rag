@@ -233,8 +233,7 @@ public benchmark coverage. These are open work, not completed results.
 The project grew from work in Genome Informatics at the Ontario Institute for
 Cancer Research by Arjun Sharma, Jochen Weile, Kayla Marsh, and Mélanie Courtot,
 with support from the University of Toronto Data Sciences Institute and the
-Government of Ontario. This README uses the navigation pattern of
-[Psi-RAG](https://github.com/Newiz430/Psi-RAG); the systems and experiments are independent.
+Government of Ontario.
 
 Source code is GPL-3.0-or-later. MultiHop-RAG data is ODC-BY; see
 [the dataset card](experiments/multihop_rag/DATASET_CARD.md).
