@@ -17,7 +17,7 @@ controller manages memory, local reading, and a corpus-wide search frontier.
 
 ![TreeRAG architecture](assets/treerag-system.svg)
 
-[Overview](#overview) · [Results](#public-results) · [Getting started](#getting-started) ·
+[Overview](#overview) · [Institutional study](#institutional-case-study) · [Public results](#public-results) · [Getting started](#getting-started) ·
 [Reproduction](#reproducing-the-public-study) · [Custom corpora](#custom-corpora) ·
 [Configuration](#configuration) · [Layout](#repository-layout) · [Citation](#citation)
 
@@ -33,9 +33,19 @@ collection's existing structure, then searches that hierarchy at query time.
 4. **Recover.** Visit a promising unexplored branch when more evidence is needed.
 5. **Answer with references.** Synthesize the retained evidence within search budgets.
 
-The study combines a restricted organizational case study with a public
-MultiHop-RAG experiment. This repository provides public inputs and outputs,
-the archived evaluated implementation, and a separately versioned modular package.
+The research centers on three connected contributions:
+
+- **Corpus-wide recovery:** a global frontier retains unexplored branches across
+  documents, supporting recovery beyond the current local descent.
+- **An OICR institutional case study:** evaluated-v0 improves mean LLM-judged
+  quality by **9.4 percentage points** over the deployed hybrid baseline on
+  294 questions, as reported in the existing aggregate record.
+- **A public-corpus evaluation:** applying the controller to 609 MultiHop-RAG news
+  articles tests the approach beyond the institutional collection. The frozen
+  200-question sample, outputs, and metric adapter support public inspection.
+
+The archived evaluated implementation and the modular package remain separately
+versioned; their results and safeguards are not interchangeable.
 
 **Signal boundary.** TreeRAG does not use a dense-vector index to select evidence.
 Its controller also uses lexical frontier seeding. The archived evaluated runner
@@ -45,6 +55,20 @@ succeeded. The modular package disables that auxiliary embedding step by default
 Consequently, the archived experiment should not be described as strictly
 agent-only or proven vector-free. See [architecture](docs/ARCHITECTURE.md) and
 [implementation provenance](REPRODUCIBILITY.md).
+
+## Institutional case study
+
+On the **OICR institutional case study** (294 questions), evaluated-v0 has mean
+LLM-judged quality **0.5629**, compared with **0.4686** for the deployed hybrid
+baseline: a paired difference of **+0.0943**, with 95% bootstrap CI
+**[0.0628, 0.1265]**. This is a difference on the judge's [0,1] quality scale,
+not a binary answer-accuracy result.
+
+These are reported values from the
+[existing institutional aggregate](experiments/private_deployment_aggregate_294_20260813.json).
+The current release excludes restricted questions and per-question study records,
+so this aggregate is not publicly row-recomputable. The gain also comes with
+higher recorded runtime; see [results and measurement limits](RESULTS.md#oicr-institutional-case-study).
 
 ## Public results
 
@@ -63,7 +87,10 @@ correctness measure. A separate joint LLM judge gives a mean paired TreeRAG
 advantage of 0.041 over flat hybrid, with 95% bootstrap CI [-0.02925, 0.11150];
 this difference remains uncertain. Baselines use different retrieval and model-call
 budgets, so these results do not isolate the causal effect of tree structure.
-They are not full-dataset leaderboard results. [Full metrics and limitations](RESULTS.md)
+They are not full-dataset leaderboard results. The apparent 8-point official QA
+gap shrinks to 1 point in a tokenization sensitivity check on the same answers;
+that diagnostic is not a validated replacement metric.
+[Full metrics and limitations](RESULTS.md)
 
 ## Getting started
 

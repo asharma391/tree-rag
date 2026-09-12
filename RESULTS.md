@@ -1,7 +1,33 @@
-# Frozen public results
+# Research results
 
-This page reports the public MultiHop-RAG study. Restricted deployment evidence
-is separate; no new restricted per-question artifact is added by this release.
+This page distinguishes the reported institutional aggregate from the reproducible
+public MultiHop-RAG study. No restricted per-question artifact is added by this release.
+
+## OICR institutional case study
+
+The existing evaluated-v0 aggregate reports the following comparison on 294
+institutional questions:
+
+| Metric | TreeRAG evaluated-v0 | Deployed hybrid baseline |
+|---|---:|---:|
+| Questions | 294 | 294 |
+| Mean LLM-judged quality, [0,1] | 0.5629 | 0.4686 |
+| Recorded mean seconds | 586.7 | 84.4 |
+
+The mean paired quality difference is **+0.0943 (9.43 percentage points)**, with
+paired bootstrap 95% CI **[0.0628, 0.1265]**. This supports a higher judged quality
+score in this case study; it is not a 9.43-point gain in binary answer accuracy.
+
+Source: the
+[previously released aggregate record](experiments/private_deployment_aggregate_294_20260813.json).
+Its original `treequest_*` field names are retained for provenance. The underlying
+corpus, questions, and per-question judgments are restricted, so these values are
+reported rather than independently recomputed from public rows.
+
+TreeRAG's recorded runtime is higher. The aggregate alone does not establish
+harmonized timing boundaries for the two systems; their ratio should not be
+presented as a controlled end-to-end latency comparison. Public-study timers have
+their own explicitly different boundaries, described below.
 
 ## MultiHop-RAG
 
@@ -32,6 +58,27 @@ producing a 28.7 MB JSON tree with 20,495 nodes and 19,212 chunks.
 
 The immutable machine-readable source is
 `experiments/multihop_rag/results/treerag_official_multihop_eval_v2_20260813.json`.
+
+### QA formatting sensitivity
+
+A diagnostic on the **same frozen answers and 200-question sample** holds the
+official answer extraction fixed and replaces whitespace-token intersection with
+intersection of Unicode word tokens (`re.findall(r"\w+", text.casefold())`). It
+changes tokenization, without generating new answers or judging semantic correctness.
+
+| System | Original official any-token overlap | Unicode-word any-token overlap |
+|---|---:|---:|
+| TreeRAG evaluated-v0 | 0.495 | 0.600 |
+| Flat hybrid | 0.415 | 0.590 |
+| Collapsed-tree control | 0.325 | 0.390 |
+| Oracle diagnostic | 0.435 | 0.775 |
+
+The TreeRAG–flat gap decreases from **8.0 to 1.0 percentage points**. The much
+larger oracle score after normalization also illustrates this metric's sensitivity
+to answer formatting. The Unicode-word variant is an exploratory diagnostic,
+**not an official or validated alternative metric**, and is not evidence of a
+semantic quality gain. Preserve the official scores, this sensitivity check,
+and the independent joint-judge comparison as separate results.
 
 ## Interpretation and corrected metadata
 
