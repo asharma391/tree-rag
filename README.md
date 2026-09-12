@@ -8,6 +8,8 @@
 
 </div>
 
+**Lead contributor:** [Arjun Sharma (@asharma391)](https://github.com/asharma391).
+
 **Navigate a document collection, retain evidence across documents, and revisit
 unexplored branches when the evidence is incomplete.**
 
