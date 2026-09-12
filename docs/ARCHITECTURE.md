@@ -38,7 +38,7 @@ iteration, model-call, and cooperative time limits can also end traversal before
 evidence is complete; the answer stage then uses the retained evidence. The limits
 and safeguards differ between archived evaluated-v0 and the modular release.
 
-The [README overview](../assets/treerag-system.svg) intentionally groups these
+The [technical overview](../assets/treerag-system.svg) intentionally groups these
 conditional checks rather than implying every search follows one fixed path.
 It does not claim every child is scored, every source is cited exactly once,
 or recovery always chooses the globally highest score.

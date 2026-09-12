@@ -1,4 +1,4 @@
-# TreeRAG: LLM-guided retrieval over corpus hierarchies
+# TreeRAG: Hierarchical Agentic Retrieval over Genomics Quality Management Documents
 
 <div align="center">
 
@@ -15,7 +15,9 @@ TreeRAG studies retrieval over native folder, document, section, and passage
 hierarchies. An open-weight LLM scores branches and reads evidence; a bounded
 controller manages memory, local reading, and a corpus-wide search frontier.
 
-![TreeRAG architecture](assets/treerag-system.svg)
+![TreeRAG methodology from the scientific poster: build the summarization tree, traverse and retain evidence, score candidates, and revisit the frontier](assets/treerag-poster-methodology.png)
+
+<sub>Original scientific-poster diagram. The document count shown belongs to the poster snapshot; evaluated study sizes are reported below.</sub>
 
 [Overview](#overview) · [Institutional study](#institutional-case-study) · [Public results](#public-results) · [Getting started](#getting-started) ·
 [Reproduction](#reproducing-the-public-study) · [Custom corpora](#custom-corpora) ·
