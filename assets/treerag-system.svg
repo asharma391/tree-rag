@@ -1,112 +1,70 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1130" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="628" viewBox="0 0 1280 628" role="img" aria-labelledby="title description" font-family="Arial, Helvetica, sans-serif">
+  <title id="title">TreeRAG: corpus hierarchy, adaptive reading, and a global recovery frontier</title>
+  <desc id="description">Build a structure-preserving summary tree once. For each question, rank branches, read and retain evidence, and assess coverage and alternatives. Continue through a global frontier when more search is needed, or synthesize an answer with sources when the search finishes. Lexical seeds support routing; archived code has an optional embedding preview helper.</desc>
   <defs>
-    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b6472"/>
-    </marker>
-    <marker id="arrLoop" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c05b3e"/>
-    </marker>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/></marker>
+    <marker id="recovery" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#b76136"/></marker>
   </defs>
-
-  <rect x="0" y="0" width="1500" height="1130" fill="#ffffff"/>
-
-  <!-- ═══ 0 ANALYZE ═══ -->
-  <g>
-    <rect x="60" y="30" width="1280" height="96" rx="10" fill="#eff2f6" stroke="#64748b" stroke-width="2.5"/>
-    <rect x="80" y="50" width="64" height="56" rx="8" fill="#64748b"/>
-    <text x="112" y="88" text-anchor="middle" font-size="30" font-weight="700" fill="#ffffff">0</text>
-    <text x="162" y="87" font-size="27" font-weight="700" fill="#1b2430" letter-spacing="0.5">ANALYZE</text>
-    <text x="430" y="70" font-size="25" fill="#2a3342">Split the question into <tspan font-weight="700">≤ 4</tspan> sub-questions; pin its one specific subject.</text>
-    <text x="430" y="104" font-size="25" fill="#2a3342">Keyword scan seeds <tspan font-weight="700">≤ 3</tspan> files onto the frontier (score <tspan font-weight="700">≤ 0.55</tspan>).</text>
-  </g>
-  <line x1="700" y1="132" x2="700" y2="164" stroke="#5b6472" stroke-width="2.5" marker-end="url(#arr)"/>
-
-  <!-- ═══ A DESCEND ═══ -->
-  <g>
-    <rect x="60" y="174" width="1280" height="96" rx="10" fill="#e9eff7" stroke="#4a6fa5" stroke-width="2.5"/>
-    <rect x="80" y="194" width="64" height="56" rx="8" fill="#4a6fa5"/>
-    <text x="112" y="232" text-anchor="middle" font-size="30" font-weight="700" fill="#ffffff">A</text>
-    <text x="162" y="231" font-size="27" font-weight="700" fill="#1b2430" letter-spacing="0.5">DESCEND</text>
-    <text x="430" y="214" font-size="25" fill="#2a3342">LLM scores every child <tspan font-weight="700">0 – 1</tspan>; follow the best one down.</text>
-    <text x="430" y="248" font-size="25" fill="#2a3342">Runner-ups → frontier (<tspan font-weight="700">≥ 0.20</tspan>) or reserve (<tspan font-weight="700">&lt; 0.20</tspan>).</text>
-  </g>
-  <line x1="700" y1="276" x2="700" y2="308" stroke="#5b6472" stroke-width="2.5" marker-end="url(#arr)"/>
-
-  <!-- ═══ B JUDGE ═══ -->
-  <g>
-    <rect x="60" y="318" width="1280" height="96" rx="10" fill="#f1ecf8" stroke="#7a5ea8" stroke-width="2.5"/>
-    <rect x="80" y="338" width="64" height="56" rx="8" fill="#7a5ea8"/>
-    <text x="112" y="376" text-anchor="middle" font-size="30" font-weight="700" fill="#ffffff">B</text>
-    <text x="162" y="375" font-size="27" font-weight="700" fill="#1b2430" letter-spacing="0.5">JUDGE</text>
-    <text x="430" y="358" font-size="25" fill="#2a3342">Read the reached document: <tspan font-weight="700">take / reject</tspan>.</text>
-    <text x="430" y="392" font-size="25" fill="#2a3342">Barren reject → subtree scores <tspan font-weight="700">× 0.30</tspan>; <tspan font-weight="700">3</tspan> barren files demote the folder.</text>
-  </g>
-  <line x1="700" y1="420" x2="700" y2="452" stroke="#5b6472" stroke-width="2.5" marker-end="url(#arr)"/>
-  <text x="716" y="443" font-size="21" fill="#5b6472" font-style="italic">take</text>
-
-  <!-- ═══ 1 DECIDE SCOPE ═══ -->
-  <g>
-    <rect x="60" y="462" width="1280" height="96" rx="10" fill="#faf3e2" stroke="#b7791f" stroke-width="2.5"/>
-    <rect x="80" y="482" width="64" height="56" rx="8" fill="#b7791f"/>
-    <text x="112" y="520" text-anchor="middle" font-size="30" font-weight="700" fill="#ffffff">1</text>
-    <text x="162" y="519" font-size="27" font-weight="700" fill="#1b2430" letter-spacing="0.5">DECIDE SCOPE</text>
-    <text x="430" y="502" font-size="25" fill="#2a3342">Keep the passage, its section, or the whole file.</text>
-    <text x="430" y="536" font-size="25" fill="#2a3342">Climb while the answer needs wider context; never past the document boundary.</text>
-  </g>
-  <line x1="700" y1="564" x2="700" y2="596" stroke="#5b6472" stroke-width="2.5" marker-end="url(#arr)"/>
-
-  <!-- ═══ 2 SWEEP ═══ -->
-  <g>
-    <rect x="60" y="606" width="1280" height="126" rx="10" fill="#e6f3f1" stroke="#2f8f83" stroke-width="2.5"/>
-    <rect x="80" y="641" width="64" height="56" rx="8" fill="#2f8f83"/>
-    <text x="112" y="679" text-anchor="middle" font-size="30" font-weight="700" fill="#ffffff">2</text>
-    <text x="162" y="678" font-size="27" font-weight="700" fill="#1b2430" letter-spacing="0.5">SWEEP</text>
-    <text x="430" y="647" font-size="25" fill="#2a3342">Rest of the same file: <tspan font-weight="700">&lt; 0.20</tspan> → dismissed.</text>
-    <text x="430" y="681" font-size="25" fill="#2a3342">Within <tspan font-weight="700">0.15</tspan> of the committed score, or <tspan font-weight="700">≥ 0.60</tspan> → read automatically.</text>
-    <text x="430" y="715" font-size="25" fill="#2a3342">In between → triaged by title + score + snippet; unpicked → <tspan font-weight="700">deferred</tspan>.</text>
-  </g>
-  <line x1="700" y1="738" x2="700" y2="770" stroke="#5b6472" stroke-width="2.5" marker-end="url(#arr)"/>
-
-  <!-- ═══ 3 GATE ═══ -->
-  <g>
-    <rect x="60" y="780" width="1280" height="96" rx="10" fill="#e9ebfa" stroke="#4c5fd5" stroke-width="2.5"/>
-    <rect x="80" y="800" width="64" height="56" rx="8" fill="#4c5fd5"/>
-    <text x="112" y="838" text-anchor="middle" font-size="30" font-weight="700" fill="#ffffff">3</text>
-    <text x="162" y="837" font-size="27" font-weight="700" fill="#1b2430" letter-spacing="0.5">GATE</text>
-    <text x="430" y="820" font-size="25" fill="#2a3342">Would the evidence alone answer? Shown <tspan font-weight="700">≤ 8</tspan> unread sections (<tspan font-weight="700">≥ 0.40</tspan>).</text>
-    <text x="430" y="854" font-size="25" fill="#2a3342">If not: read <tspan font-weight="700">≤ 4</tspan> deferred sections first, re-checking after each.</text>
-  </g>
-
-  <!-- split arrows -->
-  <polyline points="700,882 700,900 365,900 365,928" fill="none" stroke="#3d8b57" stroke-width="2.5" marker-end="url(#arr)"/>
-  <polyline points="700,882 700,900 1035,900 1035,928" fill="none" stroke="#c05b3e" stroke-width="2.5" marker-end="url(#arr)"/>
-  <text x="345" y="921" text-anchor="end" font-size="21" font-style="italic" fill="#3d8b57">sufficient · ≤ 3 contrast checks first</text>
-  <text x="1055" y="921" font-size="21" font-style="italic" fill="#c05b3e">insufficient</text>
-
-  <!-- ═══ 4a ANSWER ═══ -->
-  <g>
-    <rect x="60" y="938" width="610" height="116" rx="10" fill="#e8f4ec" stroke="#3d8b57" stroke-width="2.5"/>
-    <rect x="80" y="968" width="64" height="56" rx="8" fill="#3d8b57"/>
-    <text x="112" y="1006" text-anchor="middle" font-size="30" font-weight="700" fill="#ffffff">4a</text>
-    <text x="162" y="982" font-size="27" font-weight="700" fill="#1b2430" letter-spacing="0.5">ANSWER</text>
-    <text x="162" y="1014" font-size="25" fill="#2a3342"><tspan font-weight="700">≤ 100</tspan> words; each document</text>
-    <text x="162" y="1044" font-size="25" fill="#2a3342">cited exactly <tspan font-weight="700">once</tspan>.</text>
-  </g>
-
-  <!-- ═══ 4b REVISIT FRONTIER ═══ -->
-  <g>
-    <rect x="730" y="938" width="610" height="116" rx="10" fill="#f9ebe6" stroke="#c05b3e" stroke-width="2.5"/>
-    <rect x="750" y="968" width="64" height="56" rx="8" fill="#c05b3e"/>
-    <text x="782" y="1006" text-anchor="middle" font-size="30" font-weight="700" fill="#ffffff">4b</text>
-    <text x="832" y="982" font-size="27" font-weight="700" fill="#1b2430" letter-spacing="0.5">REVISIT FRONTIER</text>
-    <text x="832" y="1014" font-size="25" fill="#2a3342">Teleport to the best unexplored</text>
-    <text x="832" y="1044" font-size="25" fill="#2a3342">node, at <tspan font-weight="700">any depth</tspan>.</text>
-  </g>
-
-  <!-- loop-back rail: 4b → A -->
-  <polyline points="1340,996 1424,996 1424,222 1352,222" fill="none" stroke="#c05b3e" stroke-width="2.5" stroke-dasharray="7 6" marker-end="url(#arrLoop)"/>
-  <text x="1443" y="640" font-size="21" font-style="italic" fill="#c05b3e" text-anchor="middle" transform="rotate(-90 1443 640)">back to descend</text>
-
-  <!-- footer caps -->
-  <text x="700" y="1104" text-anchor="middle" font-size="22" fill="#5b6472">Caps:&#160;&#160;<tspan font-weight="700" fill="#33415c">≤ 40</tspan> node visits&#160;&#160;·&#160;&#160;<tspan font-weight="700" fill="#33415c">≤ 8</tspan> documents&#160;&#160;·&#160;&#160;<tspan font-weight="700" fill="#33415c">≤ 50</tspan> evidence pieces&#160;&#160;·&#160;&#160;<tspan font-weight="700" fill="#33415c">≤ 400</tspan> LLM calls&#160;&#160;·&#160;&#160;<tspan font-weight="700" fill="#33415c">900 s</tspan> search + <tspan font-weight="700" fill="#33415c">120 s</tspan> answer</text>
+  <rect width="1280" height="628" rx="16" fill="#ffffff"/>
+  <text x="36" y="49" font-size="30" font-weight="700" fill="#15304b">TreeRAG</text>
+  <text x="190" y="49" font-size="21" fill="#526274">Follow structure. Accumulate evidence. Revisit when needed.</text>
+  <line x1="36" y1="74" x2="1236" y2="74" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text x="36" y="112" font-size="15" font-weight="700" letter-spacing="1.5" fill="#526274">BUILD ONCE</text>
+  <text x="348" y="112" font-size="15" font-weight="700" letter-spacing="1.5" fill="#526274">SEARCH FOR EACH QUESTION</text>
+  <!-- The persistent index preserves native structure. -->
+  <rect x="36" y="136" width="258" height="280" rx="14" fill="#f4f7fb" stroke="#cbd7e4" stroke-width="1.5"/>
+  <text x="60" y="174" font-size="23" font-weight="700" fill="#15304b">Corpus hierarchy</text>
+  <path d="M165 235 V251 M105 251 H227 M105 251 V266 M227 251 V266 M105 300 V316 M80 316 H120 M80 316 V332 M120 316 V332 M227 300 V316 M202 316 H242 M202 316 V332 M242 316 V332" fill="none" stroke="#a0b4c9" stroke-width="2"/>
+  <rect x="118" y="199" width="94" height="36" rx="8" fill="#294f75"/>
+  <text x="165" y="224" text-anchor="middle" font-size="20" font-weight="700" fill="#ffffff">Corpus</text>
+  <rect x="61" y="266" width="88" height="34" rx="7" fill="#dce8f3"/>
+  <rect x="183" y="266" width="88" height="34" rx="7" fill="#dce8f3"/>
+  <text x="105" y="290" text-anchor="middle" font-size="19" fill="#294f75">Folder</text>
+  <text x="227" y="290" text-anchor="middle" font-size="19" fill="#294f75">Folder</text>
+  <g fill="#ffffff" stroke="#8ca6c0" stroke-width="1.5"><rect x="68" y="332" width="24" height="30" rx="3"/><rect x="108" y="332" width="24" height="30" rx="3"/><rect x="190" y="332" width="24" height="30" rx="3"/><rect x="230" y="332" width="24" height="30" rx="3"/></g>
+  <path d="M74 342 H86 M74 348 H86 M114 342 H126 M114 348 H126 M196 342 H208 M196 348 H208 M236 342 H248 M236 348 H248" fill="none" stroke="#a0b4c9" stroke-width="1.5"/>
+  <text x="60" y="396" font-size="18" fill="#526274">Bottom-up summaries</text>
+  <!-- The question enters the navigation controller. -->
+  <rect x="358" y="132" width="214" height="40" rx="20" fill="#eef3f8" stroke="#d4dee8"/>
+  <text x="465" y="158" text-anchor="middle" font-size="20" font-weight="700" fill="#294f75">Question</text>
+  <path d="M465 174 V186" fill="none" stroke="#64748b" stroke-width="2.3" marker-end="url(#arrow)"/>
+  <path d="M296 278 H337" fill="none" stroke="#64748b" stroke-width="2.3" marker-end="url(#arrow)"/>
+  <path d="M584 278 H625" fill="none" stroke="#64748b" stroke-width="2.3" marker-end="url(#arrow)"/>
+  <path d="M872 278 H913" fill="none" stroke="#64748b" stroke-width="2.3" marker-end="url(#arrow)"/>
+  <rect x="348" y="196" width="234" height="164" rx="14" fill="#eef4fb" stroke="#b8cce2" stroke-width="1.5"/>
+  <text x="372" y="228" font-size="15" font-weight="700" letter-spacing="1.3" fill="#456c94">01 · NAVIGATE</text>
+  <text x="372" y="268" font-size="23" font-weight="700" fill="#15304b">Score branches</text>
+  <text x="372" y="304" font-size="20" fill="#40566d">Follow the hierarchy</text>
+  <text x="372" y="333" font-size="20" fill="#40566d">Save alternatives</text>
+  <rect x="636" y="196" width="234" height="164" rx="14" fill="#edf7f4" stroke="#b8d8cf" stroke-width="1.5"/>
+  <text x="660" y="228" font-size="15" font-weight="700" letter-spacing="1.3" fill="#357564">02 · READ</text>
+  <text x="660" y="268" font-size="23" font-weight="700" fill="#174f42">Read and retain</text>
+  <text x="660" y="304" font-size="20" fill="#3f635a">Select reading scope</text>
+  <text x="660" y="333" font-size="20" fill="#3f635a">Accumulate evidence</text>
+  <rect x="924" y="196" width="312" height="164" rx="14" fill="#f3f5f9" stroke="#cbd4e0" stroke-width="1.5"/>
+  <text x="948" y="228" font-size="15" font-weight="700" letter-spacing="1.3" fill="#526274">03 · CHECK</text>
+  <text x="948" y="268" font-size="23" font-weight="700" fill="#15304b">Assess coverage</text>
+  <text x="948" y="304" font-size="20" fill="#40566d">Consider alternatives</text>
+  <text x="948" y="333" font-size="20" fill="#40566d">Decide whether to continue</text>
+  <!-- Search can continue through a global frontier, or finish. -->
+  <path d="M968 362 V469 H893" fill="none" stroke="#b76136" stroke-width="2.3" stroke-dasharray="6 5" marker-end="url(#recovery)"/>
+  <text x="950" y="400" text-anchor="end" font-size="17" fill="#96502e">Continue search</text>
+  <path d="M616 469 H465 V371" fill="none" stroke="#b76136" stroke-width="2.3" stroke-dasharray="6 5" marker-end="url(#recovery)"/>
+  <text x="483" y="441" font-size="18" font-weight="700" fill="#96502e">Revisit</text>
+  <rect x="618" y="422" width="264" height="94" rx="13" fill="#fcf2eb" stroke="#ddbda9" stroke-width="1.5"/>
+  <text x="642" y="452" font-size="22" font-weight="700" fill="#8c4729">Global frontier</text>
+  <text x="642" y="480" font-size="19" fill="#895f49">Unexplored branches</text>
+  <text x="642" y="505" font-size="19" fill="#895f49">at any tree depth</text>
+  <path d="M1144 362 V411" fill="none" stroke="#64748b" stroke-width="2.3" marker-end="url(#arrow)"/>
+  <text x="1160" y="400" font-size="17" fill="#526274">Finish</text>
+  <rect x="994" y="422" width="242" height="94" rx="13" fill="#15304b"/>
+  <text x="1018" y="452" font-size="22" font-weight="700" fill="#ffffff">Answer + sources</text>
+  <text x="1018" y="480" font-size="18" fill="#dbe7f2">Use retained evidence</text>
+  <text x="1018" y="505" font-size="18" fill="#dbe7f2">State unresolved gaps</text>
+  <text x="36" y="466" font-size="19" font-weight="700" fill="#526274">Search has limits.</text>
+  <text x="36" y="495" font-size="18" fill="#64748b">Budgets can end traversal</text>
+  <text x="36" y="520" font-size="18" fill="#64748b">before evidence is complete.</text>
+  <line x1="36" y1="548" x2="1236" y2="548" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text x="36" y="579" font-size="17" fill="#526274">Routing uses LLM branch scores and lexical seeds; evidence is reached through the hierarchy.</text>
+  <text x="36" y="606" font-size="17" fill="#526274">Archived code includes an optional embedding preview helper. The modular release disables it by default.</text>
 </svg>

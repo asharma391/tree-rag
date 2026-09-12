@@ -2,18 +2,22 @@
 
 ```mermaid
 flowchart LR
-  A["Governed folders and documents"] --> B["Structure-preserving parse"]
-  B --> C["Bottom-up summaries"]
-  C --> D["Persistent corpus tree"]
-  Q["Question"] --> R["LLM child ranking"]
+  A["Native folders and documents"] --> B["Parse structure; summarize bottom-up"]
+  B --> D["Persistent corpus tree"]
+  Q["Question"] --> P["Decompose; seed lexical candidates"]
+  P --> R["LLM branch ranking and descent"]
   D --> R
   R --> F["Active and reserve frontier"]
-  R --> E["Read and same-file sweep"]
-  E --> S{"Evidence sufficient?"}
-  S -->|No| T["Residual / breadth / score teleport"]
+  R --> E["Read; choose scope; sweep within document"]
+  E --> M["Retained evidence"]
+  M --> S{"Assess coverage"}
+  S -->|Incomplete| F
+  S -->|Sufficient| X{"Contrast probe needed?"}
+  X -->|Yes| F
+  F --> T["Select a recovery target"]
   T --> R
-  S -->|Yes| X["Contrast check"]
-  X --> G["Grounded answer with sources"]
+  X -->|No| G["Synthesize answer with sources"]
+  L["Budget or frontier exhausted"] --> G
 ```
 
 ## Build phase
@@ -26,10 +30,18 @@ per node. The tree is built once and amortized over future questions.
 
 The controller scores a bounded candidate set with the language model, descends locally,
 and retains runner-up branches globally. Reads can expand to an enclosing section and
-sweep unread sections in the same document. A sufficiency gate names missing evidence;
-teleports then target a contradiction, residual need, unvisited region, or best retained
-alternative. Search ends under explicit visit, source, evidence, call, and cooperative
-wall-clock budgets.
+sweep unread sections in the same document. A sufficiency gate names missing evidence. Even after a sufficient verdict, a bounded
+contrast probe may send the controller back to search; it is not an unconditional
+one-way step before answering. Recovery selection can prioritize a contrast target,
+residual need, unvisited region, or scored frontier candidate. Source, evidence,
+iteration, model-call, and cooperative time limits can also end traversal before
+evidence is complete; the answer stage then uses the retained evidence. The limits
+and safeguards differ between archived evaluated-v0 and the modular release.
+
+The [README overview](../assets/treerag-system.svg) intentionally groups these
+conditional checks rather than implying every search follows one fixed path.
+It does not claim every child is scored, every source is cited exactly once,
+or recovery always chooses the globally highest score.
 
 ## Why a native hierarchy
 
