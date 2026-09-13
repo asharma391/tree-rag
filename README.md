@@ -17,7 +17,7 @@ controller manages memory, local reading, and a corpus-wide search frontier.
 
 ![TreeRAG methodology from the scientific poster: build the summarization tree, traverse and retain evidence, score candidates, and revisit the frontier](assets/treerag-poster-methodology.png)
 
-[Overview](#overview) · [Institutional study](#institutional-case-study) · [Public results](#public-results) · [Getting started](#getting-started) ·
+[Overview](#overview) · [Getting started](#getting-started) ·
 [Reproduction](#reproducing-the-public-study) · [Custom corpora](#custom-corpora) ·
 [Configuration](#configuration) · [Layout](#repository-layout) · [Citation](#citation)
 
