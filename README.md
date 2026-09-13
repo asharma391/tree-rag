@@ -19,8 +19,6 @@ controller manages memory, local reading, and a corpus-wide search frontier.
 
 ![TreeRAG methodology from the scientific poster: build the summarization tree, traverse and retain evidence, score candidates, and revisit the frontier](assets/treerag-poster-methodology.png)
 
-<sub>Original scientific-poster diagram. The document count shown belongs to the poster snapshot; evaluated study sizes are reported below.</sub>
-
 [Overview](#overview) · [Institutional study](#institutional-case-study) · [Public results](#public-results) · [Getting started](#getting-started) ·
 [Reproduction](#reproducing-the-public-study) · [Custom corpora](#custom-corpora) ·
 [Configuration](#configuration) · [Layout](#repository-layout) · [Citation](#citation)
@@ -37,17 +35,6 @@ collection's existing structure, then searches that hierarchy at query time.
 4. **Recover.** Visit a promising unexplored branch when more evidence is needed.
 5. **Answer with references.** Synthesize the retained evidence within search budgets.
 
-The research centers on three connected contributions:
-
-- **Corpus-wide recovery:** a global frontier retains unexplored branches across
-  documents, supporting recovery beyond the current local descent.
-- **An OICR institutional case study:** evaluated-v0 improves mean LLM-judged
-  quality by **9.4 percentage points** over the deployed hybrid baseline on
-  294 questions, as reported in the existing aggregate record.
-- **A public-corpus evaluation:** applying the controller to 609 MultiHop-RAG news
-  articles tests the approach beyond the institutional collection. The frozen
-  200-question sample, outputs, and metric adapter support public inspection.
-
 The archived evaluated implementation and the modular package remain separately
 versioned; their results and safeguards are not interchangeable.
 
@@ -59,42 +46,6 @@ succeeded. The modular package disables that auxiliary embedding step by default
 Consequently, the archived experiment should not be described as strictly
 agent-only or proven vector-free. See [architecture](docs/ARCHITECTURE.md) and
 [implementation provenance](REPRODUCIBILITY.md).
-
-## Institutional case study
-
-On the **OICR institutional case study** (294 questions), evaluated-v0 has mean
-LLM-judged quality **0.5629**, compared with **0.4686** for the deployed hybrid
-baseline: a paired difference of **+0.0943**, with 95% bootstrap CI
-**[0.0628, 0.1265]**. This is a difference on the judge's [0,1] quality scale,
-not a binary answer-accuracy result.
-
-These are reported values from the
-[existing institutional aggregate](experiments/private_deployment_aggregate_294_20260813.json).
-The current release excludes restricted questions and per-question study records,
-so this aggregate is not publicly row-recomputable. The gain also comes with
-higher recorded runtime; see [results and measurement limits](RESULTS.md#oicr-institutional-case-study).
-
-## Public results
-
-Frozen balanced sample: **200 MultiHop-RAG questions**, 50 of each type, over
-609 public news articles. Retrieval metrics use the 150 non-null questions.
-
-| System | Official QA accuracy | Hits@10 | MAP@10 | MRR@10 |
-|---|---:|---:|---:|---:|
-| TreeRAG evaluated-v0 | 0.495 | 0.6933 | 0.2258 | 0.4612 |
-| Flat hybrid | 0.415 | unavailable | unavailable | unavailable |
-| Collapsed-tree search | 0.325 | 0.4800 | 0.1058 | 0.2539 |
-| Gold-context diagnostic | 0.435 | 1.0000 | 0.6700 | 1.0000 |
-
-The official QA rule accepts any answer-token overlap and is not a semantic
-correctness measure. A separate joint LLM judge gives a mean paired TreeRAG
-advantage of 0.041 over flat hybrid, with 95% bootstrap CI [-0.02925, 0.11150];
-this difference remains uncertain. Baselines use different retrieval and model-call
-budgets, so these results do not isolate the causal effect of tree structure.
-They are not full-dataset leaderboard results. The apparent 8-point official QA
-gap shrinks to 1 point in a tokenization sensitivity check on the same answers;
-that diagnostic is not a validated replacement metric.
-[Full metrics and limitations](RESULTS.md)
 
 ## Getting started
 
